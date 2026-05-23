@@ -24,8 +24,11 @@ from blindoracle_sdk.exceptions import (
     RateLimitError,
     MarketNotFoundError,
 )
+from blindoracle_sdk.audit import AuditAPI, AuditAttestation, verify_inclusion, verify_anchor
+from blindoracle_sdk.privacy import PrivacyAPI, DISCLOSURE_MODES, ZK_CLAIM_TYPES
+from blindoracle_sdk.metrics import MetricsAPI
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Craig Brown"
 __email__ = "craigmbrown@gmail.com"
 __url__ = "https://craigmbrown.com/blindoracle"
@@ -36,4 +39,12 @@ __all__ = [
     "AuthenticationError",
     "RateLimitError",
     "MarketNotFoundError",
+    "AuditAPI",
+    "AuditAttestation",
+    "verify_inclusion",
+    "verify_anchor",
+    "PrivacyAPI",
+    "DISCLOSURE_MODES",
+    "ZK_CLAIM_TYPES",
+    "MetricsAPI",
 ]

@@ -22,6 +22,9 @@ from blindoracle_sdk.markets import MarketsAPI
 from blindoracle_sdk.compliance import ComplianceAPI
 from blindoracle_sdk.signals import SignalsAPI
 from blindoracle_sdk.agents import AgentsAPI
+from blindoracle_sdk.audit import AuditAPI
+from blindoracle_sdk.privacy import PrivacyAPI
+from blindoracle_sdk.metrics import MetricsAPI
 
 
 class BlindOracleClient:
@@ -44,7 +47,10 @@ class BlindOracleClient:
     """
 
     DEFAULT_BASE_URL = "https://api.craigmbrown.com/blindoracle/v1"
-    USER_AGENT = f"blindoracle-sdk-python/0.1.0"
+    USER_AGENT = f"blindoracle-sdk-python/0.2.0"
+
+    # v0.2 audit/privacy/metrics live on the a2a marketplace gateway (distinct from /blindoracle/v1)
+    DEFAULT_GATEWAY_URL = "https://api.craigmbrown.com"
 
     def __init__(
         self,
@@ -53,9 +59,11 @@ class BlindOracleClient:
         timeout: int = 30,
         max_retries: int = 3,
         ecash_token: Optional[str] = None,
+        gateway_base_url: str = DEFAULT_GATEWAY_URL,
     ):
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
+        self.gateway_base_url = gateway_base_url.rstrip("/")
         self.timeout = timeout
         self.max_retries = max_retries
         self.ecash_token = ecash_token
@@ -65,6 +73,9 @@ class BlindOracleClient:
         self.compliance = ComplianceAPI(self)
         self.signals = SignalsAPI(self)
         self.agents = AgentsAPI(self)
+        self.audit = AuditAPI(self)        # verifiable on-chain-anchored audits (v0.2)
+        self.privacy = PrivacyAPI(self)    # disclosure modes + ZK claims (v0.2)
+        self.metrics = MetricsAPI(self)    # accuracy benchmarks + cost/revenue (v0.2)
 
     def _request(
         self,
@@ -72,12 +83,16 @@ class BlindOracleClient:
         path: str,
         params: dict = None,
         body: dict = None,
+        extra_headers: dict = None,
+        base: str = None,
     ) -> dict:
         """
         Make an authenticated HTTP request to the BlindOracle API.
         Handles retries, rate limits, and x402 payment headers.
+        ``extra_headers`` supports per-request headers like X-402-ZK-Proof (privacy claims).
+        ``base`` overrides the base URL (e.g. the a2a gateway for v0.2 audit/privacy/metrics).
         """
-        url = f"{self.base_url}/{path.lstrip('/')}"
+        url = f"{(base or self.base_url).rstrip('/')}/{path.lstrip('/')}"
         if params:
             url = f"{url}?{urllib.parse.urlencode(params)}"
 
@@ -90,6 +105,8 @@ class BlindOracleClient:
             headers["Authorization"] = f"Bearer {self.api_key}"
         if self.ecash_token:
             headers["X-402-Payment"] = self.ecash_token
+        if extra_headers:
+            headers.update(extra_headers)
 
         data = json.dumps(body).encode("utf-8") if body else None
 
@@ -149,8 +166,16 @@ class BlindOracleClient:
     def get(self, path: str, params: dict = None) -> dict:
         return self._request("GET", path, params=params)
 
-    def post(self, path: str, body: dict = None) -> dict:
-        return self._request("POST", path, body=body)
+    def post(self, path: str, body: dict = None, extra_headers: dict = None) -> dict:
+        return self._request("POST", path, body=body, extra_headers=extra_headers)
 
     def patch(self, path: str, body: dict = None) -> dict:
         return self._request("PATCH", path, body=body)
+
+    # --- a2a marketplace gateway (v0.2 audit/privacy/metrics) ---
+    def gw_get(self, path: str, params: dict = None) -> dict:
+        return self._request("GET", path, params=params, base=self.gateway_base_url)
+
+    def gw_post(self, path: str, body: dict = None, extra_headers: dict = None) -> dict:
+        return self._request("POST", path, body=body, extra_headers=extra_headers,
+                             base=self.gateway_base_url)
