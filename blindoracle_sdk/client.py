@@ -46,7 +46,7 @@ class BlindOracleClient:
         markets = client.markets.list(status="active")
     """
 
-    DEFAULT_BASE_URL = "https://api.craigmbrown.com/blindoracle/v1"
+    DEFAULT_BASE_URL = "https://api.craigmbrown.com/v1"
     USER_AGENT = f"blindoracle-sdk-python/0.2.0"
 
     # v0.2 audit/privacy/metrics live on the a2a marketplace gateway (distinct from /blindoracle/v1)
