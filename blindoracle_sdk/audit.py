@@ -12,7 +12,7 @@ from typing import Optional
 # public Base RPCs for keyless anchor read-back (fallback chain)
 _BASE_MAINNET_RPC = ["https://mainnet.base.org", "https://base.llamarpc.com"]
 _BASE_SEPOLIA_RPC = ["https://sepolia.base.org"]
-_VERIFY_ANCHOR_SELECTOR = "0x9f3f8a13"  # keccak256("verifyAnchor(bytes32)")[:4]
+_VERIFY_ANCHOR_SELECTOR = "0xf32bd282"  # keccak256("verifyAnchor(bytes32)")[:4]
 
 
 class AuditAttestation:
