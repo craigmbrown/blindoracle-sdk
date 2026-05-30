@@ -27,8 +27,15 @@ from blindoracle_sdk.exceptions import (
 from blindoracle_sdk.audit import AuditAPI, AuditAttestation, verify_inclusion, verify_anchor
 from blindoracle_sdk.privacy import PrivacyAPI, DISCLOSURE_MODES, ZK_CLAIM_TYPES
 from blindoracle_sdk.metrics import MetricsAPI
+from blindoracle_sdk.delegation import (
+    DelegationLog,
+    verify_signature,
+    delegation_signature,
+    delegator_passport_hash,
+    DELEGATION_KIND,
+)
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Craig Brown"
 __email__ = "craigmbrown@gmail.com"
 __url__ = "https://craigmbrown.com/blindoracle"
@@ -47,4 +54,9 @@ __all__ = [
     "DISCLOSURE_MODES",
     "ZK_CLAIM_TYPES",
     "MetricsAPI",
+    "DelegationLog",
+    "verify_signature",
+    "delegation_signature",
+    "delegator_passport_hash",
+    "DELEGATION_KIND",
 ]
