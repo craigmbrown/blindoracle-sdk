@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-05-31
+
+- **`introductions` API (VI-001)** — `client.introductions.request(my_profile, counterparty_profile)`:
+  agent-to-agent Verified Introduction via band-overlap (no raw criteria revealed),
+  returning a `ProofOfIntroduction` receipt. x402-paid; identity = your BO-onboarded passport.
+- `client.introductions.cost()` — price discovery without executing.
+- README added: self-serve onboarding + verified-introduction getting-started.
+
 ## 0.2.0 — 2026-05-23
 
 Exposes the recently-shipped BlindOracle capabilities: **auditability, privacy, accuracy, cost**.
