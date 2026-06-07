@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1 — 2026-06-07
+
+### Fixed
+- **Project links pointed at a private repo.** PyPI `Repository` / `Bug Tracker`
+  linked `github.com/craigmbrown/ETAC-System` (private → 404 for visitors). Now point
+  to the public `github.com/craigmbrown/blindoracle-sdk`, and a `Docs Repository` link
+  to the public `github.com/craigmbrown/blindoracle-docs` was added.
+
 ## 0.4.0 — 2026-06-07
 
 Developer-experience pass — make first use one line and pick up config the way every

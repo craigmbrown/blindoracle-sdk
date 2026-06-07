@@ -51,7 +51,7 @@ class BlindOracleClient:
     """
 
     DEFAULT_BASE_URL = "https://api.craigmbrown.com/v1"
-    USER_AGENT = "blindoracle-sdk-python/0.4.0"
+    USER_AGENT = "blindoracle-sdk-python/0.4.1"
 
     # Full-jitter exponential backoff (AWS "Exponential Backoff And Jitter").
     # A whole fleet of agents retrying in lockstep is a thundering herd; jitter
