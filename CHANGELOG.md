@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.4.2 — 2026-06-07
+
+### Added
+- **`DelegationLog.verify_associativity(event_id, *, strict_scope=False)`** — verifies
+  delegation-chain associativity + privilege-escalation constraints (REQ-RQ171-005),
+  giving the SDK parity with the standalone verifier.
+
+### Fixed
+- The associativity verifier is now **vendored into the package**
+  (`delegation_associativity.py` + `delegation_constraints.py`, both stdlib-only).
+  Previously it imported `scripts.*` from a private monorepo path
+  (`/home/craigmbrown/Project`), so the method raised `ImportError` for any external
+  `pip install` user. Now it works out of the box; a monorepo import fallback is kept
+  for internal callers. Zero-dependency policy preserved.
+
 ## 0.4.1 — 2026-06-07
 
 ### Fixed
