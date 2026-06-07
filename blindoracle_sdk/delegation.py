@@ -184,6 +184,34 @@ class DelegationLog:
             last_was_chained = True
         return result
 
+    def verify_associativity(
+        self,
+        event_id: str,
+        *,
+        strict_scope: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Verify delegation chain associativity and privilege-escalation constraints.
+
+        Reconstructs the root→leaf chain via chain_to_root(), then delegates to
+        the vendored ``delegation_associativity.verify_associativity()``. Precondition:
+        call verify() first to ensure chain integrity.
+
+        REQ-RQ171-005: SDK parity with standalone verifier. The verifier is vendored
+        into the package (no external path setup required).
+        """
+        try:
+            from blindoracle_sdk.delegation_associativity import (
+                verify_associativity as _verify,
+            )
+        except ImportError:  # pragma: no cover - monorepo fallback
+            from scripts.delegation_associativity import (  # type: ignore[import]
+                verify_associativity as _verify,
+            )
+
+        chain_root_to_leaf = list(reversed(self.chain_to_root(event_id)))
+        return _verify(chain_root_to_leaf, strict_scope=strict_scope)
+
     def chain_to_root(self, event_id: str) -> List[Dict[str, Any]]:
         """Return the authority chain (leaf → root) ending at ``event_id``.
 

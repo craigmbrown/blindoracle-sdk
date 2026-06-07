@@ -106,3 +106,32 @@ def test_empty_log_verifies(log):
     res = log.verify()
     assert res["ok"] is True
     assert res["total_records"] == 0
+
+
+# REQ-RQ171-005: SDK verify_associativity parity
+
+def test_verify_associativity_intact(log):
+    """Clean narrowing chain passes associativity + monotone checks (REQ-RQ171-005)."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+    log.emit("operator-root", "Agent A", scope="read write execute")
+    log.emit("agent-A",       "Agent B", scope="read write")
+    leaf = log.emit("agent-B", "Agent C", scope="read")
+    result = log.verify_associativity(leaf["event_id"])
+    assert result["ok"] is True
+    assert result["associative"] is True
+    assert result["monotone"] is True
+    assert result["violations"] == []
+    assert set(result["effective_authority"]["scope"]) == {"read"}
+
+
+def test_detects_escalation(log):
+    """Child that adds scope token is flagged as scope_expansion (REQ-RQ171-005)."""
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+    log.emit("operator-root", "Agent A", scope="read")
+    leaf = log.emit("agent-A", "Agent B", scope="read write")  # 'write' not in parent
+    result = log.verify_associativity(leaf["event_id"])
+    assert any(v["type"] == "scope_expansion" for v in result["violations"])
+    # advisory by default — ok stays True
+    assert result["ok"] is True
