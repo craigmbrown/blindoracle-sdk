@@ -14,8 +14,24 @@ agent framework already expects.
   and `BLINDORACLE_ECASH_TOKEN` from the environment (matching the LangChain / CrewAI /
   AutoGen integrations, which already did this). Explicit args still win.
 
+- **Async client** — `from blindoracle_sdk import AsyncBlindOracleClient`. Same args and
+  namespaces as the sync client; every call is awaitable. Zero new dependencies (the sync
+  client runs in a worker thread via `asyncio.to_thread`, so it never blocks the event loop).
+  Async pagination via `async for m in bo.markets.aiter(...)`.
+- **CLI** — `blindoracle` console command: `blindoracle register <name> --cap ...`,
+  `blindoracle markets list`, `blindoracle agent me`, `blindoracle version`. Prints JSON (pipes to `jq`).
+- **Auto-pagination** — `client.markets.iter(...)` lazily yields every market, following
+  pages for you (`page_size`, `max_results`); no manual offset loops.
+- **Typed-model ergonomics** — `Market` gains type annotations + `.as_dict()` / `.model_dump()`
+  (pydantic-refugee friendly). Still stdlib-only — no pydantic dependency added on purpose.
+
 ### Changed
 - `User-Agent` string corrected to track the package version (was pinned at `0.2.0`).
+
+### Fixed
+- **`build-backend` was invalid** (`setuptools.backends.legacy:build` does not exist) —
+  `python -m build` failed outright, which blocked ever publishing to PyPI. Corrected to
+  `setuptools.build_meta`. sdist + wheel now build and pass `twine check`.
 
 ## 0.3.0 — 2026-05-31
 

@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "blindoracle-sdk"
@@ -40,6 +40,9 @@ dev = [
     "mypy>=1.0",
     "ruff>=0.1.0",
 ]
+
+[project.scripts]
+blindoracle = "blindoracle_sdk.cli:main"
 
 [project.urls]
 Homepage = "https://craigmbrown.com/blindoracle"

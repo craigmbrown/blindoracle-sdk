@@ -18,11 +18,17 @@ Usage:
 """
 
 from blindoracle_sdk.client import BlindOracleClient
+from blindoracle_sdk.aio import AsyncBlindOracleClient
+from blindoracle_sdk.markets import Market
 from blindoracle_sdk.exceptions import (
     BlindOracleError,
     AuthenticationError,
     RateLimitError,
     MarketNotFoundError,
+    PaymentRequiredError,
+    ValidationError,
+    PassportRequiredError,
+    CredentialNotFoundError,
 )
 from blindoracle_sdk.audit import AuditAPI, AuditAttestation, verify_inclusion, verify_anchor
 from blindoracle_sdk.privacy import PrivacyAPI, DISCLOSURE_MODES, ZK_CLAIM_TYPES
@@ -42,10 +48,16 @@ __url__ = "https://craigmbrown.com/blindoracle"
 
 __all__ = [
     "BlindOracleClient",
+    "AsyncBlindOracleClient",
+    "Market",
     "BlindOracleError",
     "AuthenticationError",
     "RateLimitError",
     "MarketNotFoundError",
+    "PaymentRequiredError",
+    "ValidationError",
+    "PassportRequiredError",
+    "CredentialNotFoundError",
     "AuditAPI",
     "AuditAttestation",
     "verify_inclusion",

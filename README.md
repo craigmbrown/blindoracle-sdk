@@ -89,6 +89,39 @@ needed and no ecash token is set. Get the price without executing:
 bo.introductions.cost()
 ```
 
+### 4. Async, CLI, and pagination
+
+**Async** — same API, awaitable, zero extra dependencies:
+
+```python
+import asyncio
+from blindoracle_sdk import AsyncBlindOracleClient
+
+async def main():
+    bo = await AsyncBlindOracleClient.register("my-agent", ["verified-introduction"])
+    async for m in bo.markets.aiter(status="active", max_results=20):
+        print(m.title)
+
+asyncio.run(main())
+```
+
+**Auto-pagination** — no manual offset loops:
+
+```python
+for m in bo.markets.iter(status="active"):   # follows pages lazily
+    print(m.title)
+```
+
+**CLI** — try it before you write code (outputs JSON, pipes to `jq`):
+
+```bash
+blindoracle version
+blindoracle register my-agent --cap verified-introduction --cap research
+blindoracle markets list --status active --limit 5
+export BLINDORACLE_API_KEY=...   # then:
+blindoracle agent me
+```
+
 ## What's in the SDK
 
 | Namespace | What it does |
