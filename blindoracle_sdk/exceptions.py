@@ -32,3 +32,14 @@ class PaymentRequiredError(BlindOracleError):
 class ValidationError(BlindOracleError):
     """Request parameters invalid."""
     pass
+
+
+class PassportRequiredError(BlindOracleError):
+    """Raised when an attestation credential is requested for an agent that has
+    not completed the required flow: onboard + activate an ERC-8004 passport AND
+    run a BO audit (ProofOfAuditReport 30105) before requesting the credential."""
+
+
+class CredentialNotFoundError(BlindOracleError):
+    """Raised when no attestation credential exists for the given proof_id yet —
+    the audit must be finished and dual-emitted first."""

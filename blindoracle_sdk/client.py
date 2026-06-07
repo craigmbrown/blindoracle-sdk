@@ -26,6 +26,7 @@ from blindoracle_sdk.audit import AuditAPI
 from blindoracle_sdk.privacy import PrivacyAPI
 from blindoracle_sdk.metrics import MetricsAPI
 from blindoracle_sdk.introductions import IntroductionsAPI
+from blindoracle_sdk.attestation import AttestationAPI
 
 
 class BlindOracleClient:
@@ -77,7 +78,8 @@ class BlindOracleClient:
         self.audit = AuditAPI(self)        # verifiable on-chain-anchored audits (v0.2)
         self.privacy = PrivacyAPI(self)    # disclosure modes + ZK claims (v0.2)
         self.metrics = MetricsAPI(self)    # accuracy benchmarks + cost/revenue (v0.2)
-        self.introductions = IntroductionsAPI(self)  # Verified Introduction VI-001 (v0.3)
+        self.introductions = IntroductionsAPI(self)
+        self.attestation = AttestationAPI(self)  # Verified Introduction VI-001 (v0.3)
 
     def _request(
         self,
