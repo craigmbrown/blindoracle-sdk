@@ -4,6 +4,8 @@ Core HTTP client with authentication, retries, and x402 payment support.
 """
 
 import json
+import os
+import random
 import time
 import urllib.request
 import urllib.parse
@@ -49,7 +51,13 @@ class BlindOracleClient:
     """
 
     DEFAULT_BASE_URL = "https://api.craigmbrown.com/v1"
-    USER_AGENT = f"blindoracle-sdk-python/0.2.0"
+    USER_AGENT = "blindoracle-sdk-python/0.4.0"
+
+    # Full-jitter exponential backoff (AWS "Exponential Backoff And Jitter").
+    # A whole fleet of agents retrying in lockstep is a thundering herd; jitter
+    # spreads the retries. Server-directed 429 Retry-After still takes precedence.
+    BACKOFF_BASE = 0.5
+    BACKOFF_CAP = 20.0
 
     # v0.2 audit/privacy/metrics live on the a2a marketplace gateway (distinct from /blindoracle/v1)
     DEFAULT_GATEWAY_URL = "https://api.craigmbrown.com"
@@ -63,23 +71,78 @@ class BlindOracleClient:
         ecash_token: Optional[str] = None,
         gateway_base_url: str = DEFAULT_GATEWAY_URL,
     ):
-        self.api_key = api_key
+        # Env fallback (matches the LangChain/CrewAI/AutoGen integrations): a bare
+        # BlindOracleClient() picks up BLINDORACLE_API_KEY / BLINDORACLE_ECASH_TOKEN.
+        self.api_key = api_key or os.environ.get("BLINDORACLE_API_KEY")
         self.base_url = base_url.rstrip("/")
         self.gateway_base_url = gateway_base_url.rstrip("/")
         self.timeout = timeout
         self.max_retries = max_retries
-        self.ecash_token = ecash_token
+        self.ecash_token = ecash_token or os.environ.get("BLINDORACLE_ECASH_TOKEN")
 
         # Sub-APIs
         self.markets = MarketsAPI(self)
         self.compliance = ComplianceAPI(self)
         self.signals = SignalsAPI(self)
         self.agents = AgentsAPI(self)
-        self.audit = AuditAPI(self)        # verifiable on-chain-anchored audits (v0.2)
-        self.privacy = PrivacyAPI(self)    # disclosure modes + ZK claims (v0.2)
-        self.metrics = MetricsAPI(self)    # accuracy benchmarks + cost/revenue (v0.2)
+        self.audit = AuditAPI(self)  # verifiable on-chain-anchored audits (v0.2)
+        self.privacy = PrivacyAPI(self)  # disclosure modes + ZK claims (v0.2)
+        self.metrics = MetricsAPI(self)  # accuracy benchmarks + cost/revenue (v0.2)
         self.introductions = IntroductionsAPI(self)
         self.attestation = AttestationAPI(self)  # Verified Introduction VI-001 (v0.3)
+        self.registration = None  # set by BlindOracleClient.register()
+        self.agent_id = None
+
+    @classmethod
+    def register(
+        cls,
+        name: str,
+        capabilities: list,
+        evm_address: str = "",
+        base_url: str = DEFAULT_BASE_URL,
+        timeout: int = 30,
+    ) -> "BlindOracleClient":
+        """Self-serve onboarding in one line — mint an ERC-8004 passport + API key
+        and return a ready, authenticated client (observer tier).
+
+            bo = BlindOracleClient.register("my-agent", ["verified-introduction"])
+            print(bo.agent_id)              # your ERC-8004 agent id
+            bo.introductions.request(...)   # already authed
+
+        The raw response (api_key, tier, erc8004_identity) is on ``bo.registration``.
+        """
+        body = json.dumps(
+            {"name": name, "capabilities": capabilities, "evm_address": evm_address}
+        ).encode("utf-8")
+        url = f"{base_url.rstrip('/')}/agents/register"
+        req = urllib.request.Request(
+            url,
+            data=body,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "User-Agent": cls.USER_AGENT,
+                "Accept": "application/json",
+            },
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                reg = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            raise BlindOracleError(
+                f"registration failed (HTTP {e.code}): {e.read().decode('utf-8')[:160]}",
+                status_code=e.code,
+            )
+        if reg.get("error") and not reg.get("api_key"):
+            raise BlindOracleError(f"registration failed: {reg['error']}")
+        client = cls(api_key=reg.get("api_key"), base_url=base_url, timeout=timeout)
+        client.registration = reg
+        client.agent_id = reg.get("agent_id")
+        return client
+
+    def _backoff(self, attempt: int) -> float:
+        """Seconds to sleep before retry `attempt` — full jitter, capped."""
+        return random.uniform(0.0, min(self.BACKOFF_CAP, self.BACKOFF_BASE * (2**attempt)))
 
     def _request(
         self,
@@ -154,14 +217,14 @@ class BlindOracleClient:
                         status_code=status,
                     )
                 elif status >= 500 and attempt < self.max_retries - 1:
-                    time.sleep(2 ** attempt)  # exponential backoff
+                    time.sleep(self._backoff(attempt))  # full-jitter backoff
                     continue
                 else:
                     raise BlindOracleError(message, status_code=status)
 
             except urllib.error.URLError as e:
                 if attempt < self.max_retries - 1:
-                    time.sleep(2 ** attempt)
+                    time.sleep(self._backoff(attempt))
                     continue
                 raise BlindOracleError(f"Network error: {e}")
 
@@ -181,5 +244,6 @@ class BlindOracleClient:
         return self._request("GET", path, params=params, base=self.gateway_base_url)
 
     def gw_post(self, path: str, body: dict = None, extra_headers: dict = None) -> dict:
-        return self._request("POST", path, body=body, extra_headers=extra_headers,
-                             base=self.gateway_base_url)
+        return self._request(
+            "POST", path, body=body, extra_headers=extra_headers, base=self.gateway_base_url
+        )
