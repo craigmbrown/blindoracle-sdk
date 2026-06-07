@@ -35,7 +35,7 @@ from blindoracle_sdk.delegation import (
     DELEGATION_KIND,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "Craig Brown"
 __email__ = "craigmbrown@gmail.com"
 __url__ = "https://craigmbrown.com/blindoracle"

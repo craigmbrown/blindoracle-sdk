@@ -4,6 +4,7 @@ Core HTTP client with authentication, retries, and x402 payment support.
 """
 
 import json
+import os
 import time
 import urllib.request
 import urllib.parse
@@ -49,7 +50,7 @@ class BlindOracleClient:
     """
 
     DEFAULT_BASE_URL = "https://api.craigmbrown.com/v1"
-    USER_AGENT = f"blindoracle-sdk-python/0.2.0"
+    USER_AGENT = "blindoracle-sdk-python/0.4.0"
 
     # v0.2 audit/privacy/metrics live on the a2a marketplace gateway (distinct from /blindoracle/v1)
     DEFAULT_GATEWAY_URL = "https://api.craigmbrown.com"
@@ -63,12 +64,14 @@ class BlindOracleClient:
         ecash_token: Optional[str] = None,
         gateway_base_url: str = DEFAULT_GATEWAY_URL,
     ):
-        self.api_key = api_key
+        # Env fallback (matches the LangChain/CrewAI/AutoGen integrations): a bare
+        # BlindOracleClient() picks up BLINDORACLE_API_KEY / BLINDORACLE_ECASH_TOKEN.
+        self.api_key = api_key or os.environ.get("BLINDORACLE_API_KEY")
         self.base_url = base_url.rstrip("/")
         self.gateway_base_url = gateway_base_url.rstrip("/")
         self.timeout = timeout
         self.max_retries = max_retries
-        self.ecash_token = ecash_token
+        self.ecash_token = ecash_token or os.environ.get("BLINDORACLE_ECASH_TOKEN")
 
         # Sub-APIs
         self.markets = MarketsAPI(self)
@@ -80,6 +83,47 @@ class BlindOracleClient:
         self.metrics = MetricsAPI(self)    # accuracy benchmarks + cost/revenue (v0.2)
         self.introductions = IntroductionsAPI(self)
         self.attestation = AttestationAPI(self)  # Verified Introduction VI-001 (v0.3)
+        self.registration = None  # set by BlindOracleClient.register()
+        self.agent_id = None
+
+    @classmethod
+    def register(
+        cls,
+        name: str,
+        capabilities: list,
+        evm_address: str = "",
+        base_url: str = DEFAULT_BASE_URL,
+        timeout: int = 30,
+    ) -> "BlindOracleClient":
+        """Self-serve onboarding in one line — mint an ERC-8004 passport + API key
+        and return a ready, authenticated client (observer tier).
+
+            bo = BlindOracleClient.register("my-agent", ["verified-introduction"])
+            print(bo.agent_id)              # your ERC-8004 agent id
+            bo.introductions.request(...)   # already authed
+
+        The raw response (api_key, tier, erc8004_identity) is on ``bo.registration``.
+        """
+        body = json.dumps({"name": name, "capabilities": capabilities,
+                           "evm_address": evm_address}).encode("utf-8")
+        url = f"{base_url.rstrip('/')}/agents/register"
+        req = urllib.request.Request(
+            url, data=body, method="POST",
+            headers={"Content-Type": "application/json",
+                     "User-Agent": cls.USER_AGENT, "Accept": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                reg = json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            raise BlindOracleError(
+                f"registration failed (HTTP {e.code}): {e.read().decode('utf-8')[:160]}",
+                status_code=e.code)
+        if reg.get("error") and not reg.get("api_key"):
+            raise BlindOracleError(f"registration failed: {reg['error']}")
+        client = cls(api_key=reg.get("api_key"), base_url=base_url, timeout=timeout)
+        client.registration = reg
+        client.agent_id = reg.get("agent_id")
+        return client
 
     def _request(
         self,

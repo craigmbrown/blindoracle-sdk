@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.4.0 — 2026-06-07
+
+Developer-experience pass — make first use one line and pick up config the way every
+agent framework already expects.
+
+### Added
+- **`BlindOracleClient.register(name, capabilities, evm_address="")`** — self-serve
+  onboarding in one call. Mints an ERC-8004 passport + API key and returns a ready,
+  **already-authenticated** client. No more raw `requests.post(...)` boilerplate in
+  every quickstart. Raw response on `client.registration`; passport id on `client.agent_id`.
+- **Env-var fallback** — a bare `BlindOracleClient()` now reads `BLINDORACLE_API_KEY`
+  and `BLINDORACLE_ECASH_TOKEN` from the environment (matching the LangChain / CrewAI /
+  AutoGen integrations, which already did this). Explicit args still win.
+
+### Changed
+- `User-Agent` string corrected to track the package version (was pinned at `0.2.0`).
+
 ## 0.3.0 — 2026-05-31
 
 - **`introductions` API (VI-001)** — `client.introductions.request(my_profile, counterparty_profile)`:

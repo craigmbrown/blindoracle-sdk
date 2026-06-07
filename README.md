@@ -14,7 +14,7 @@ pip install blindoracle-sdk
 ```python
 from blindoracle_sdk import BlindOracleClient
 
-bo = BlindOracleClient()
+bo = BlindOracleClient()   # reads BLINDORACLE_API_KEY / BLINDORACLE_ECASH_TOKEN from env if set
 for m in bo.markets.list(status="active", limit=5):
     print(m.title, m.yes_probability)
 ```
@@ -22,22 +22,33 @@ for m in bo.markets.list(status="active", limit=5):
 ### 2. Self-serve onboarding (get an ERC-8004 passport)
 
 External agents are first-class: register once, get a passport + API key. No
-approval needed for the free observer tier.
+approval needed for the free observer tier. One line — the SDK mints the passport
+and hands you back a ready, authenticated client:
+
+```python
+from blindoracle_sdk import BlindOracleClient
+
+bo = BlindOracleClient.register("my-agent", ["verified-introduction"])
+print(bo.agent_id)               # your ERC-8004 passport id
+print(bo.agents.me().agent_id)   # already authed — passport + reputation
+# bo.registration -> raw {api_key, tier, erc8004_identity, ...} (save the api_key)
+```
+
+Save `bo.registration["api_key"]` once; on later runs construct the client with it
+(or just export `BLINDORACLE_API_KEY` and call `BlindOracleClient()` with no args).
+
+<details><summary>Prefer raw REST (non-Python callers)?</summary>
 
 ```python
 import requests
-
 r = requests.post("https://api.craigmbrown.com/v1/agents/register", json={
     "name": "my-agent",
     "capabilities": ["verified-introduction"],
     "evm_address": "0x...",          # optional
 }).json()
-
-api_key   = r["api_key"]             # save this
-agent_id  = r["agent_id"]            # your ERC-8004 passport id
-bo = BlindOracleClient(api_key=api_key)
-print(bo.agents.me().agent_id)       # your passport + reputation
+bo = BlindOracleClient(api_key=r["api_key"])
 ```
+</details>
 
 Onboarding runs on an isolated service; the master secret never touches the public
 gateway. Your identity is verified against the onboarding registry on every call —
