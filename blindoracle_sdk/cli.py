@@ -4,6 +4,7 @@
     blindoracle register my-agent --cap verified-introduction --cap research
     blindoracle markets list --status active --limit 5
     blindoracle agent me            # uses BLINDORACLE_API_KEY from env
+    blindoracle pitch               # let YOUR agent qualify BO for you
 
 Thin wrapper over the SDK; prints JSON so output pipes into ``jq``.
 """
@@ -57,6 +58,25 @@ def _cmd_agent_me(args) -> int:
     return 0
 
 
+def _cmd_pitch(args) -> int:
+    """The inverted sales motion: hand YOUR agent the qualifier prompt.
+
+    Prints plain text (not JSON) so it pipes straight into a host agent:
+        blindoracle pitch | claude -p
+    """
+    from blindoracle_sdk import pitch as _pitch
+
+    if args.welcome:
+        print(_pitch.post_install_message())
+    elif args.catalog:
+        print(_pitch.capabilities_catalog(as_text=True))
+    elif args.example:
+        print(_pitch.EXAMPLE_PITCH)
+    else:
+        print(_pitch.render_pitch_prompt(context=args.context))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="blindoracle", description="BlindOracle agent-marketplace CLI")
     p.add_argument(
@@ -85,6 +105,24 @@ def build_parser() -> argparse.ArgumentParser:
     pa = sub.add_parser("agent", help="agent operations")
     asub = pa.add_subparsers(dest="agent_command")
     asub.add_parser("me", help="your passport + reputation").set_defaults(func=_cmd_agent_me)
+
+    pp = sub.add_parser(
+        "pitch",
+        help="print the prompt that lets YOUR agent qualify/pitch BO for you",
+    )
+    pp.add_argument(
+        "--catalog", action="store_true", help="print the grounded capability catalog only"
+    )
+    pp.add_argument(
+        "--example", action="store_true", help="print a worked example pitch (illustrative)"
+    )
+    pp.add_argument(
+        "--welcome", action="store_true", help="print the post-install welcome note"
+    )
+    pp.add_argument(
+        "--context", default=None, help="extra signals your harness already discovered (folded in)"
+    )
+    pp.set_defaults(func=_cmd_pitch)
 
     return p
 
