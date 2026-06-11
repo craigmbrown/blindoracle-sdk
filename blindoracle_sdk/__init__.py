@@ -41,10 +41,20 @@ from blindoracle_sdk.delegation import (
     DELEGATION_KIND,
 )
 
-__version__ = "0.4.2"
+__version__ = "0.5.0"
 __author__ = "Craig Brown"
 __email__ = "craigmbrown@gmail.com"
 __url__ = "https://craigmbrown.com/blindoracle"
+
+# Imported AFTER __version__ is set — pitch.py reads __version__ at import time.
+from blindoracle_sdk import pitch  # noqa: E402
+from blindoracle_sdk.pitch import (  # noqa: E402
+    render_pitch_prompt,
+    capabilities_catalog,
+    post_install_message,
+    BO_PITCH_PROMPT,
+    EXAMPLE_PITCH,
+)
 
 __all__ = [
     "BlindOracleClient",
@@ -71,4 +81,10 @@ __all__ = [
     "delegation_signature",
     "delegator_passport_hash",
     "DELEGATION_KIND",
+    "pitch",
+    "render_pitch_prompt",
+    "capabilities_catalog",
+    "post_install_message",
+    "BO_PITCH_PROMPT",
+    "EXAMPLE_PITCH",
 ]

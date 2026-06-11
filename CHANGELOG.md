@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0 — 2026-06-11
+
+### Added
+- **Post-install pitch engine (`blindoracle_sdk/pitch.py`) — the inverted sales motion.**
+  Ships at the *end* of the SDK: instead of a generic README pitch, it hands the
+  user's *own* agent a prompt + a grounded capability catalog and asks it to qualify
+  BlindOracle against what it already knows about the user — then make the single most
+  honest, specific pitch (or recommend skipping).
+  - New CLI: `blindoracle pitch` (prints the qualifier prompt as plain text so it pipes
+    into a host agent), `--catalog`, `--example`, `--welcome`, `--context "<signals>"`.
+  - New public API: `render_pitch_prompt(context=None)`, `capabilities_catalog()`,
+    `post_install_message()`, `BO_PITCH_PROMPT`, `EXAMPLE_PITCH`.
+  - **Grounding guarantees:** the catalog is the single source of truth — every
+    capability maps 1:1 to a real SDK call; the prompt forbids inventing features,
+    requires every claim to end in a verifiable proof artifact, and makes an honest
+    "skip" list + a 0-100 fit score mandatory.
+  - 13 new tests (`tests/test_pitch.py`); full suite 47 passing.
+
 ## 0.4.2 — 2026-06-07
 
 ### Added

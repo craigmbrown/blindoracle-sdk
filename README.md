@@ -122,6 +122,31 @@ export BLINDORACLE_API_KEY=...   # then:
 blindoracle agent me
 ```
 
+### 5. Let *your* agent pitch BO to you (`blindoracle pitch`)
+
+BlindOracle doesn't know your user — *your agent does*. So the last thing the SDK
+ships is an **inverted sales motion**: a prompt that hands your own agent a
+grounded catalog of everything BO can do and asks it to qualify BO against what it
+already knows about your codebase, tools, and priorities — then make the single
+most honest pitch (or recommend skipping).
+
+```bash
+blindoracle pitch            # print the qualifier prompt for your agent
+blindoracle pitch | claude -p   # …or pipe it straight into your harness
+blindoracle pitch --example  # a worked example pitch
+blindoracle pitch --catalog  # the grounded capability catalog (single source of truth)
+```
+
+```python
+from blindoracle_sdk import render_pitch_prompt
+# Fold in signals you already discovered so the agent doesn't re-derive them:
+prompt = render_pitch_prompt(context="USES: langchain, multi-agent orchestrator, on-chain x402")
+```
+
+The prompt is grounded: an agent may only pitch capabilities that map 1:1 to a real
+SDK call, every claim must end in a verifiable proof artifact, and an honest "skip"
+list + a 0-100 fit score are mandatory. A trusted recommendation beats a sale.
+
 ## What's in the SDK
 
 | Namespace | What it does |
