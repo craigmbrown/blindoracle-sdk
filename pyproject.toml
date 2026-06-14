@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "blindoracle-sdk"
-version = "0.5.0"
+version = "0.6.0"
 description = "Chainlink-verified prediction markets for autonomous agents"
 readme = "README.md"
 license = {text = "MIT"}
@@ -30,6 +30,7 @@ requires-python = ">=3.10"
 dependencies = []  # Zero external deps — stdlib only
 
 [project.optional-dependencies]
+privacy = ["cryptography>=42"]
 langchain = ["langchain>=0.1.0", "langchain-core>=0.1.0"]
 autogen = ["pyautogen>=0.2.0"]
 crewai = ["crewai>=0.1.0"]

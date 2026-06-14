@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.0 — 2026-06-14
+
+### Added
+- **Private settlement audit (`blindoracle_sdk/private_settlement.py`).** Get keys,
+  seal a private job, and audit one — the full key lifecycle for confidential a2a deals.
+  - `generate_auditor_key(path)` → age keypair (secret local 0600, public to register).
+  - `public_from_key_file(path)`, `seal_private(artifact, recipient_pub)`,
+    `audit_private(ledger, key_file)`.
+  - CLI: `bo private keygen --out KEY` and `bo private audit --ledger L --key K`.
+  - Crypto: X25519 ECIES → HKDF-SHA256 → ChaCha20-Poly1305 (the `age` primitives);
+    commitment = `sha3_256(artifact ‖ salt)`. Right key reads + verifies; a wrong key
+    fails closed (`InvalidTag`) — can neither read nor forge.
+  - Optional dependency: `pip install "blindoracle-sdk[privacy]"` (core stays zero-dep).
+  - Guide: `docs/private-settlement-audit.md`.
+
 ## 0.5.0 — 2026-06-11
 
 ### Added

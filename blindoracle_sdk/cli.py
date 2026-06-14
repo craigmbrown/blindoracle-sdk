@@ -124,7 +124,43 @@ def build_parser() -> argparse.ArgumentParser:
     )
     pp.set_defaults(func=_cmd_pitch)
 
+    # private-settlement: get keys + audit a sealed private job
+    pv = sub.add_parser("private", help="private settlement — generate auditor keys + audit sealed jobs")
+    vsub = pv.add_subparsers(dest="private_command")
+    pk = vsub.add_parser("keygen", help="generate an age auditor key (private local, public to register)")
+    pk.add_argument("--out", default="bo_auditor.key", help="path to write the SECRET key (mode 0600)")
+    pk.set_defaults(func=_cmd_private_keygen)
+    pau = vsub.add_parser("audit", help="decrypt + verify sealed private settlements with your key")
+    pau.add_argument("--ledger", required=True, help="JSONL of sealed settlements")
+    pau.add_argument("--key", required=True, help="your age key file")
+    pau.set_defaults(func=_cmd_private_audit)
+
     return p
+
+
+def _cmd_private_keygen(args) -> int:
+    from blindoracle_sdk import private_settlement as ps
+    r = ps.generate_auditor_key(args.out)
+    print(f"✓ wrote secret key → {r['path']} (mode 0600)")
+    print(f"  public (register this as an authorized auditor): {r['public']}")
+    print("  KEEP THE SECRET KEY SAFE + BACKED UP — losing it makes sealed jobs unrecoverable.")
+    return 0
+
+
+def _cmd_private_audit(args) -> int:
+    from blindoracle_sdk import private_settlement as ps
+    rows = ps.audit(args.ledger, args.key)
+    ok = 0
+    for r in rows:
+        if r["decrypted"] and r["commitment_verified"]:
+            ok += 1
+            a = r.get("artifact", {})
+            print(f"✓ {r['commitment'][:18]}…  {a.get('buyer','?')} → {a.get('seller','?')} "
+                  f"${a.get('negotiated_fee_usd', a.get('amount_usd','?'))}  ({a.get('sku','?')})")
+        else:
+            print(f"✗ {r['commitment'][:18]}…  CANNOT AUDIT — {r.get('error','mismatch')} (wrong key?)")
+    print(f"\n{ok}/{len(rows)} private settlements decrypted + commitment-verified.")
+    return 0 if rows and ok == len(rows) else 1
 
 
 def main(argv=None) -> int:
