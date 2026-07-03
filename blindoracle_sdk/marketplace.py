@@ -49,6 +49,8 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, List, Optional
 
+from blindoracle_sdk.skill_marketplace import SkillMarketplaceAPI
+
 
 class ServiceRequest:
     """A posted marketplace request + its auto-generated bids."""
@@ -86,6 +88,17 @@ class MarketplaceAPI:
 
     def __init__(self, client):
         self._client = client
+        self._skills: Optional[SkillMarketplaceAPI] = None
+
+    @property
+    def skills(self) -> SkillMarketplaceAPI:
+        """``bo.marketplace.skills`` — buy/sell reusable agent-skill SKUs via
+        x402 (RQ-YTMEMO-ACT2-XjOLz--C_nQ). Thin, additive: delegates to this
+        same :class:`MarketplaceAPI` instance, no new HTTP plumbing. See
+        docs/marketplace.md "Buying a skill SKU via x402"."""
+        if self._skills is None:
+            self._skills = SkillMarketplaceAPI(self)
+        return self._skills
 
     # -- seller: publish a capability/SKU ---------------------------------
     def register_sku(
