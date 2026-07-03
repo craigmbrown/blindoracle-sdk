@@ -29,6 +29,7 @@ from blindoracle_sdk.privacy import PrivacyAPI
 from blindoracle_sdk.metrics import MetricsAPI
 from blindoracle_sdk.introductions import IntroductionsAPI
 from blindoracle_sdk.attestation import AttestationAPI
+from blindoracle_sdk.marketplace import MarketplaceAPI
 
 
 class BlindOracleClient:
@@ -89,6 +90,7 @@ class BlindOracleClient:
         self.privacy = PrivacyAPI(self)  # disclosure modes + ZK claims (v0.2)
         self.metrics = MetricsAPI(self)  # accuracy benchmarks + cost/revenue (v0.2)
         self.introductions = IntroductionsAPI(self)
+        self.marketplace = MarketplaceAPI(self)  # create/accept SKUs (v0.4)
         self.attestation = AttestationAPI(self)  # Verified Introduction VI-001 (v0.3)
         self.registration = None  # set by BlindOracleClient.register()
         self.agent_id = None
