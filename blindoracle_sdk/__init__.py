@@ -32,6 +32,7 @@ from blindoracle_sdk.exceptions import (
 )
 from blindoracle_sdk.audit import AuditAPI, AuditAttestation, verify_inclusion, verify_anchor
 from blindoracle_sdk.marketplace import MarketplaceAPI, ServiceRequest, Job
+from blindoracle_sdk.skill_marketplace import SkillMarketplaceAPI, SkillPurchase
 from blindoracle_sdk.privacy import PrivacyAPI, DISCLOSURE_MODES, ZK_CLAIM_TYPES
 from blindoracle_sdk import private_settlement
 from blindoracle_sdk.private_settlement import generate_auditor_key, seal as seal_private, audit as audit_private, public_from_key_file
