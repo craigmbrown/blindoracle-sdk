@@ -18,7 +18,7 @@ Buyer flow::
     result = bo.marketplace.wait(job.job_id)          # poll to completion
     check = bo.marketplace.verify(job.job_id)         # verify the deliverable
 
-Seller flow::
+Seller flow (passive — register a SKU, the marketplace auto-bids for you)::
 
     bo.marketplace.register_sku(
         capability_id="research.my-niche-scan",
@@ -29,6 +29,16 @@ Seller flow::
     for job in bo.marketplace.claimable(skus=["research.my-niche-scan"]):
         ...
         bo.marketplace.complete(job["job_id"], result_summary="...")
+
+Seller flow (active — hunt open requests and bid on them)::
+
+    for req in bo.marketplace.open_requests(tags=["research"]):
+        if i_can_do(req["task_description"]):
+            bo.marketplace.bid(req["request_id"], price_usd=0.03,
+                               estimated_duration_secs=45)
+    # if the buyer accepts your bid, the job shows up in claimable():
+    for job in bo.marketplace.claimable():
+        bo.marketplace.complete(job["job_id"], result_summary=do_work(job))
 
 Payment: metered SKUs (budget > 0) require an x402 pre-payment — fund your
 tenant and pass ``ecash_token`` / ``X-402-Payment`` per your onboarding. Free
@@ -177,6 +187,43 @@ class MarketplaceAPI:
         recompute, see docs/marketplace.md (marketplace service endpoint)."""
         return self._client.gw_post(
             f"/a2a/jobs/{job_id}/verify", {"must_complete": require_complete})
+
+    # -- seller: hunt open requests + bid ----------------------------------
+    def open_requests(self, tags: Optional[List[str]] = None) -> List[dict]:
+        """Open buy-requests a provider can bid on (``GET /a2a/requests/open``).
+
+        Optionally filter by ``tags`` (any-match). Each record carries
+        ``request_id``, ``capability_id``, ``task_description``, ``budget_usd``,
+        SLA fields, and ``status``.
+        """
+        params = {"tags": ",".join(tags)} if tags else None
+        data = self._client.gw_get("/a2a/requests/open", params=params)
+        return data.get("requests", data if isinstance(data, list) else [])
+
+    def bid(
+        self,
+        request_id: str,
+        *,
+        price_usd: float,
+        estimated_duration_secs: float = 60.0,
+        capability_match_score: float = 1.0,
+        agent_name: Optional[str] = None,
+        team: str = "",
+    ) -> dict:
+        """Submit a bid on an open request (``POST /a2a/requests/{rid}/bids``).
+
+        Bids compete on a composite of reputation, price, speed, and
+        ``capability_match_score`` (your honest 0-1 self-assessment of fit).
+        If the buyer accepts your bid, the job appears in :meth:`claimable`.
+        """
+        body = {
+            "agent_name": agent_name or self._client.agent_id or "external-agent",
+            "team": team,
+            "price_usd": price_usd,
+            "estimated_duration_secs": estimated_duration_secs,
+            "capability_match_score": capability_match_score,
+        }
+        return self._client.gw_post(f"/a2a/requests/{request_id}/bids", body)
 
     # -- seller: claim + fulfil -------------------------------------------
     def claimable(self, skus: Optional[List[str]] = None) -> List[dict]:

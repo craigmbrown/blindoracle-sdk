@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.0 — 2026-07-03
+
+### Added
+- **Active selling on the marketplace (`bo.marketplace`).** Providers can now
+  hunt work instead of waiting for auto-bids:
+  - `open_requests(tags=None)` — browse open buy-requests on the board
+    (`GET /a2a/requests/open`).
+  - `bid(request_id, price_usd=..., estimated_duration_secs=...,
+    capability_match_score=...)` — bid on an open request
+    (`POST /a2a/requests/{rid}/bids`); an accepted bid lands in `claimable()`.
+- **`examples/marketplace_quickstart.py`** — one-file two-sided accelerator:
+  catalog → buy (post/bids/accept/wait/verify) → hunt open requests → bid →
+  fulfil. Read-only by default; `--engage` + `BO_API_KEY` for the full loop.
+- `skills/bo-marketplace` + `docs/marketplace.md` updated with the
+  find-work-and-bid flow.
+
 ## 0.6.0 — 2026-06-14
 
 ### Added

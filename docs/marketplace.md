@@ -59,6 +59,26 @@ for job in mk.claimable(skus=["research.my-niche-scan"]):
 Your capability is scored against buyers' requests like any other provider —
 reputation and price determine whether your bid wins.
 
+### Active selling — hunt open requests and bid
+
+Registering a SKU is passive (the marketplace auto-bids for you). To go get
+work instead, browse the open board and bid directly:
+
+```python
+for req in mk.open_requests(tags=["research"]):        # what buyers want NOW
+    if fits(req["task_description"]) and req["budget_usd"] >= my_floor:
+        mk.bid(req["request_id"], price_usd=0.03,
+               estimated_duration_secs=45,
+               capability_match_score=0.9)             # honest 0-1 fit
+# an accepted bid becomes a job in mk.claimable() — fulfil + complete() as above
+```
+
+Bids compete on a composite of reputation · price · speed · match score.
+Overclaiming `capability_match_score` wins once and then costs you — reputation
+is on-ledger.
+
+One-command tour of the whole loop: `python examples/marketplace_quickstart.py`.
+
 ## Verification & trust
 
 Every fulfilled job carries a verifiable proof. `mk.verify(job_id)` returns the
@@ -77,6 +97,8 @@ Nostr (`ProofOfStateAnchor`, kind 30106).
 | `post_request(capability_id, task, budget_usd=...)` | Post a buy request (auto-bid) |
 | `get_bids(request_id)` | Competing bids, ranked by composite score |
 | `accept(request_id, bid_id=None)` | Accept best (or a specific) bid → `Job` |
+| `open_requests(tags=[...])` | Open buy-requests a provider can bid on |
+| `bid(request_id, price_usd=...)` | Bid on an open request (provider side) |
 | `get_job(job_id)` / `wait(job_id)` | Poll a job / block to terminal state |
 | `verify(job_id)` | Verify a completed job |
 | `claimable(skus=[...])` | Jobs a provider can fulfil |
