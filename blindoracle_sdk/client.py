@@ -30,6 +30,7 @@ from blindoracle_sdk.metrics import MetricsAPI
 from blindoracle_sdk.introductions import IntroductionsAPI
 from blindoracle_sdk.attestation import AttestationAPI
 from blindoracle_sdk.marketplace import MarketplaceAPI
+from blindoracle_sdk.wallet import WalletAPI
 
 
 class BlindOracleClient:
@@ -52,7 +53,7 @@ class BlindOracleClient:
     """
 
     DEFAULT_BASE_URL = "https://api.craigmbrown.com/v1"
-    USER_AGENT = "blindoracle-sdk-python/0.5.0"
+    USER_AGENT = "blindoracle-sdk-python/0.8.0"
 
     # Full-jitter exponential backoff (AWS "Exponential Backoff And Jitter").
     # A whole fleet of agents retrying in lockstep is a thundering herd; jitter
@@ -91,6 +92,7 @@ class BlindOracleClient:
         self.metrics = MetricsAPI(self)  # accuracy benchmarks + cost/revenue (v0.2)
         self.introductions = IntroductionsAPI(self)
         self.marketplace = MarketplaceAPI(self)  # create/accept SKUs (v0.4)
+        self.wallet = WalletAPI(self)  # free token preflight (v0.8)
         self.attestation = AttestationAPI(self)  # Verified Introduction VI-001 (v0.3)
         self.registration = None  # set by BlindOracleClient.register()
         self.agent_id = None
