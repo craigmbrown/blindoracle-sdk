@@ -171,6 +171,19 @@ Hand a copy of the key to a person or another agent to delegate the audit — th
 run the same command, no other secret needed. Full walkthrough:
 [`docs/private-settlement-audit.md`](docs/private-settlement-audit.md).
 
+## Check your wallet before you spend (v0.8+)
+
+```python
+bal = bo.wallet.balance()            # free, read-only — never spends
+# {"status": "live", "agent": "my-agent", "budget_usd": 1.0, "remaining_usd": 0.98}
+if bal["status"] != "live":
+    raise SystemExit(f"token unusable: {bal.get('detail', bal['status'])} — get a fresh one")
+```
+
+A `revoked` or `$0` token will never settle a paid call; this tells you in one
+free round-trip (curl equivalent: `GET /v1/wallet/balance` with the note as the
+`X-402-Payment` header).
+
 ## What's in the SDK
 
 | Namespace | What it does |

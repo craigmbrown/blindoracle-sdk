@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.8.0 — 2026-07-06
+
+### Added
+- **Free wallet-token preflight (`bo.wallet.balance()`).** Verify a starter-credit
+  bearer note WITHOUT spending it — wraps the new free gateway endpoint
+  `GET /v1/wallet/balance` (note sent as `X-402-Payment`). Returns
+  `status: live | revoked | unknown` plus `remaining_usd`, so agents can gate
+  paid SKU calls on one read-only round-trip instead of burning paid attempts
+  to discover a dead token (the failure mode from the first external-adopter
+  session). Defaults to the client's `ecash_token`; accepts `token=` override.
+  Exposed in the async client too.
+
+### Fixed
+- Stale `USER_AGENT` string (was still 0.5.0).
+
+
 ## 0.7.0 — 2026-07-03
 
 ### Added
