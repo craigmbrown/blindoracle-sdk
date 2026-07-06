@@ -32,6 +32,7 @@ _NAMESPACES = (
     "metrics",
     "introductions",
     "attestation",
+    "wallet",
 )
 
 
