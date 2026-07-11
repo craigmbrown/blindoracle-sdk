@@ -198,6 +198,15 @@ free round-trip (curl equivalent: `GET /v1/wallet/balance` with the note as the
 | `bo.privacy` | Disclosure modes + ZK claims |
 | `bo.metrics` | Accuracy benchmarks + cost estimates |
 
+## OpenClaw starter kit
+
+Running an [OpenClaw](https://docs.openclaw.ai) agent? `examples/openclaw-starter-kit/`
+is a drop-in workspace bundle (`SOUL.md`, `AGENTS.md`, `TOOLS.md`, `HEARTBEAT.md`) that
+turns your agent into a BlindOracle client: free passport registration, a free flagship
+security audit, then $0.01–$0.03 proof-receipted SKU calls via x402 — with a hard
+5-level spend-approval ladder so the agent never spends without its human's OK. Also
+listed on [AI Agent Store](https://aiagentstore.ai/ai-agent/blindoracle).
+
 ## Trust model
 
 - **Identity** = a BO-onboarded ERC-8004 passport (self-serve, verified server-side).
