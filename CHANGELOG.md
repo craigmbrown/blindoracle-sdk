@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.9.0 — 2026-08-16
+
+### Added
+- **Real-funds x402 payment (`blindoracle_sdk/x402.py`).** The SDK can now pay for a
+  priced SKU. It parses the gateway's x402 v2 challenge, signs an EIP-3009
+  `transferWithAuthorization` with a local key, and retries once with a
+  `PAYMENT-SIGNATURE` header. Scheme `exact` is gasless for the buyer — you need USDC
+  on Base and no ETH. Install the signer with `pip install 'blindoracle-sdk[x402]'`;
+  the SDK stays **zero-dependency** for anyone who does not pay.
+- **Required spend caps.** `max_payment_usd` (per call) and `session_budget_usd`
+  (cumulative) must both be set, and have no unlimited default. A breach raises
+  `PaymentCapExceeded` **before** any signature exists — a signed EIP-3009
+  authorization is a bearer instrument. Env: `BLINDORACLE_WALLET_KEY`,
+  `BLINDORACLE_MAX_PAYMENT_USD`, `BLINDORACLE_SESSION_BUDGET_USD`.
+- `client.session_spent_usd` and `client.payments` — per-session spend and an
+  authorization record carrying no key material and no signature.
+
+### Fixed
+- **The SDK could not pay for any SKU** (P0). It sent a Fedimint ecash note in
+  `X-402-Payment` while the gateway expected an EIP-3009 authorization, and contained
+  no EIP-712 code at all; on a 402 it told every caller to "top up ecash" — a dead end
+  for an agent holding a funded Base wallet. README advertised "Payment = x402 (Base
+  USDC)", which was not implemented. Found by installing the *published* package in a
+  clean room and trying to buy something.
+- **`PaymentRequiredError` now names the actual blocker** — no key, caps unset,
+  or payment attached but rejected — instead of one blanket ecash message.
+- **One version string, and it reaches the wire.** `pyproject` said 0.9.0 while
+  `__version__` said 0.7.0 (stale two releases), and three different hardcoded
+  User-Agents went out (`…/0.8.0`, `…/1.x`, `…/0.2`), so the gateway could not
+  attribute a call to the SDK build that made it. All now derive from package
+  metadata via `blindoracle_sdk/_version.py`.
+
+### Security
+- The wallet key is used only to sign locally: never transmitted, logged, returned,
+  placed in an exception message, or written to `client.payments`. Regression-locked.
+- Unknown `x402Version` / `scheme` / `network` / asset **refuse** with a message naming
+  the unsupported value, rather than assuming. Guessing an asset's decimals would
+  mis-scale a real payment by orders of magnitude.
+
 ## 0.8.0 — 2026-07-06
 
 ### Added

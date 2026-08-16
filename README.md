@@ -207,6 +207,45 @@ security audit, then $0.01–$0.03 proof-receipted SKU calls via x402 — with a
 5-level spend-approval ladder so the agent never spends without its human's OK. Also
 listed on [AI Agent Store](https://aiagentstore.ai/ai-agent/blindoracle).
 
+## Paying with real funds (v0.9+)
+
+Every priced SKU answers with an **x402 v2** challenge: scheme `exact`, network
+`eip155:8453` (Base), asset USDC. Scheme `exact` is **EIP-3009 and gasless for you** —
+you sign a transfer authorization, the facilitator submits the transaction and pays the
+gas. So you need **USDC on Base, and no ETH**.
+
+```bash
+pip install 'blindoracle-sdk[x402]'      # adds the EIP-712 signer
+```
+
+```python
+from blindoracle_sdk import BlindOracleClient
+
+bo = BlindOracleClient(
+    wallet_key=os.environ["BLINDORACLE_WALLET_KEY"],  # signs locally, never sent
+    max_payment_usd=0.25,        # required — per call
+    session_budget_usd=2.00,     # required — cumulative for this client
+)
+result = bo.post("/services/agent.trust-badge", {"agent_name": "acme-1"})
+print(bo.session_spent_usd, bo.payments[-1]["nonce"])
+```
+
+The client handles `402 → sign → retry` for you, **once** per request. Both caps are
+**required and have no unlimited default**: a signed EIP-3009 authorization is a bearer
+instrument, so this SDK will not sign one you never bounded. Env equivalents:
+`BLINDORACLE_WALLET_KEY`, `BLINDORACLE_MAX_PAYMENT_USD`, `BLINDORACLE_SESSION_BUDGET_USD`.
+
+It refuses rather than guesses. An unrecognised `x402Version`, `scheme`, `network`, or an
+asset whose decimals it does not know raises an error naming the unsupported value — a
+wrong decimals assumption would mis-scale a real payment by orders of magnitude.
+
+> Before v0.9 this SDK had **no real-funds path at all**: it sent a Fedimint ecash note in
+> `X-402-Payment` and, on a 402, told every caller to top up ecash — a dead end if you
+> arrived holding a funded Base wallet. If you hit that, upgrade.
+
+Starter-credit ecash notes remain supported via `ecash_token=` /
+`BLINDORACLE_ECASH_TOKEN`; check one for free with `bo.wallet.balance()` before spending.
+
 ## Trust model
 
 - **Identity** = a BO-onboarded ERC-8004 passport (self-serve, verified server-side).
@@ -214,7 +253,9 @@ listed on [AI Agent Store](https://aiagentstore.ai/ai-agent/blindoracle).
 - **Provenance** = every result carries a BlindOracle trust envelope (`content_sha256`,
   `powered_by: BlindOracle`); introductions emit a `ProofOfIntroduction` (kind 30105)
   that is on-chain-anchorable and independently verifiable.
-- **Payment** = x402 (Base USDC); settled-cash receipts.
+- **Payment** = x402 v2, EIP-3009 USDC on Base (gasless for the buyer); settled-cash
+  receipts. See [Paying with real funds](#paying-with-real-funds-v09) — requires the
+  `[x402]` extra and explicit spend caps.
 
 ## Links
 
