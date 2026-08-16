@@ -14,6 +14,7 @@ import json
 import urllib.request
 import urllib.error
 
+from blindoracle_sdk._version import user_agent as _user_agent
 from blindoracle_sdk.exceptions import (
     PassportRequiredError,
     CredentialNotFoundError,
@@ -36,7 +37,7 @@ class AttestationAPI:
         req = urllib.request.Request(
             self._mcp_url, data=body,
             headers={"Content-Type": "application/json",
-                     "User-Agent": "blindoracle-sdk/1.x"}, method="POST")
+                     "User-Agent": _user_agent()}, method="POST")
         try:
             with urllib.request.urlopen(req, timeout=getattr(self._client, "timeout", 30)) as r:
                 return json.loads(r.read())

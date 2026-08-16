@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "blindoracle-sdk"
-version = "0.8.0"
+version = "0.9.0"
 description = "Chainlink-verified prediction markets for autonomous agents"
 readme = "README.md"
 license = {text = "MIT"}
@@ -29,7 +29,12 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = []  # Zero external deps — stdlib only
 
+# RQ-BO-SDK-X402-PAY-01: real-funds x402 payment needs an EIP-712 signer. Kept
+# OPTIONAL so the zero-dependency promise above still holds for every caller who
+# reads free endpoints, uses a starter-credit ecash note, or never pays at all.
+#   pip install 'blindoracle-sdk[x402]'
 [project.optional-dependencies]
+x402 = ["eth-account>=0.11"]
 privacy = ["cryptography>=42"]
 langchain = ["langchain>=0.1.0", "langchain-core>=0.1.0"]
 autogen = ["pyautogen>=0.2.0"]

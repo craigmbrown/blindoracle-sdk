@@ -12,6 +12,23 @@ import urllib.parse
 import urllib.error
 from typing import Optional
 
+
+from blindoracle_sdk._version import user_agent as _user_agent
+from blindoracle_sdk.x402 import PAYMENT_HEADER as _X402_HEADER
+
+
+def _env_float(name: str) -> Optional[float]:
+    """Read a float cap from the environment. A malformed value is ignored
+    rather than silently treated as zero or unlimited."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return None
+    try:
+        return float(raw)
+    except ValueError:
+        return None
+
+
 from blindoracle_sdk.exceptions import (
     BlindOracleError,
     AuthenticationError,
@@ -53,7 +70,10 @@ class BlindOracleClient:
     """
 
     DEFAULT_BASE_URL = "https://api.craigmbrown.com/v1"
-    USER_AGENT = "blindoracle-sdk-python/0.8.0"
+    # RQ-BO-SKU-DOGFOOD-01: derived, never a literal. Three hardcoded User-Agent
+    # strings across this SDK ("…/0.8.0", "…/1.x", "…/0.2") meant the gateway
+    # could not attribute a call to the SDK build that made it.
+    USER_AGENT = _user_agent()
 
     # Full-jitter exponential backoff (AWS "Exponential Backoff And Jitter").
     # A whole fleet of agents retrying in lockstep is a thundering herd; jitter
@@ -72,6 +92,9 @@ class BlindOracleClient:
         max_retries: int = 3,
         ecash_token: Optional[str] = None,
         gateway_base_url: str = DEFAULT_GATEWAY_URL,
+        wallet_key: Optional[str] = None,
+        max_payment_usd: Optional[float] = None,
+        session_budget_usd: Optional[float] = None,
     ):
         # Env fallback (matches the LangChain/CrewAI/AutoGen integrations): a bare
         # BlindOracleClient() picks up BLINDORACLE_API_KEY / BLINDORACLE_ECASH_TOKEN.
@@ -81,6 +104,24 @@ class BlindOracleClient:
         self.timeout = timeout
         self.max_retries = max_retries
         self.ecash_token = ecash_token or os.environ.get("BLINDORACLE_ECASH_TOKEN")
+
+        # RQ-BO-SDK-X402-PAY-01 — real-funds x402 payment (EIP-3009 on Base).
+        # The key is held here only to sign locally; it is never transmitted,
+        # logged, or placed in an exception. Caps have NO unlimited default:
+        # signing a transfer authorization the caller never bounded is a
+        # liability, so an unset cap refuses rather than pays.
+        self.wallet_key = wallet_key or os.environ.get("BLINDORACLE_WALLET_KEY")
+        self.max_payment_usd = (
+            max_payment_usd if max_payment_usd is not None
+            else _env_float("BLINDORACLE_MAX_PAYMENT_USD")
+        )
+        self.session_budget_usd = (
+            session_budget_usd if session_budget_usd is not None
+            else _env_float("BLINDORACLE_SESSION_BUDGET_USD")
+        )
+        self.session_spent_usd = 0.0
+        #: Append-only record of settled payments this session (no key material).
+        self.payments = []
 
         # Sub-APIs
         self.markets = MarketsAPI(self)
@@ -148,6 +189,68 @@ class BlindOracleClient:
         """Seconds to sleep before retry `attempt` — full jitter, capped."""
         return random.uniform(0.0, min(self.BACKOFF_CAP, self.BACKOFF_BASE * (2**attempt)))
 
+    # --- x402 v2 real-funds payment (RQ-BO-SDK-X402-PAY-01) -----------------
+
+    def _x402_pay(self, body, headers) -> Optional[str]:
+        """Parse a 402 challenge, enforce caps, sign, and return the header value.
+
+        Returns ``None`` when this client cannot or must not pay, so the caller
+        falls through to the normal :class:`PaymentRequiredError` path with an
+        informative message. A cap breach is deliberately re-raised rather than
+        swallowed: silently not-paying a call the caller asked for would look
+        like a server failure.
+        """
+        from blindoracle_sdk import x402 as _x402
+
+        try:
+            challenge = _x402.parse_challenge(body=body, headers=headers)
+        except _x402.UnsupportedPaymentError:
+            return None  # message surfaced by _payment_help
+
+        header_value, payload = _x402.build_payment_header(
+            challenge,
+            private_key=self.wallet_key,
+            max_payment_usd=self.max_payment_usd,
+            session_budget_usd=self.session_budget_usd,
+            session_spent_usd=self.session_spent_usd,
+        )
+        self.session_spent_usd += challenge.amount_usd
+        # Record the authorization, never the key or the signature's provenance.
+        self.payments.append({
+            "amount_usd": challenge.amount_usd,
+            "asset": challenge.asset,
+            "network": challenge.network,
+            "pay_to": challenge.pay_to,
+            "resource": challenge.resource_url,
+            "nonce": payload["payload"]["authorization"]["nonce"],
+            "valid_before": payload["payload"]["authorization"]["validBefore"],
+        })
+        return header_value
+
+    def _payment_help(self, detail: str) -> str:
+        """A 402 message that names the actual blocker.
+
+        The pre-2026-08-16 message told every caller to "top up ecash", which was
+        a dead end for an agent holding a funded Base wallet — the SDK had no
+        real-funds path at all (finding F4).
+        """
+        if not self.wallet_key:
+            hint = ("no wallet key configured. For real-funds payment set "
+                    "BLINDORACLE_WALLET_KEY (or wallet_key=) to a Base wallet "
+                    "holding USDC, and install the signing extra: "
+                    "pip install 'blindoracle-sdk[x402]'. Alternatively set "
+                    "BLINDORACLE_ECASH_TOKEN for a starter-credit note.")
+        elif self.max_payment_usd is None or self.session_budget_usd is None:
+            hint = ("a wallet key is configured but spend caps are not. Set "
+                    "max_payment_usd and session_budget_usd (or "
+                    "BLINDORACLE_MAX_PAYMENT_USD / BLINDORACLE_SESSION_BUDGET_USD) "
+                    "— this client will not sign an unbounded transfer authorization.")
+        else:
+            hint = ("payment was attached but the gateway did not accept it. "
+                    "Check the wallet's USDC balance on Base and that the "
+                    "authorization had not expired.")
+        return f"x402 payment required — {hint} Detail: {detail}"
+
     def _request(
         self,
         method: str,
@@ -197,14 +300,23 @@ class BlindOracleClient:
                     err_data = json.loads(body_text)
                     message = err_data.get("error", err_data.get("message", body_text))
                 except Exception:
+                    body_text, err_data = "", {}
                     message = f"HTTP {status}"
+
+                # RQ-BO-SDK-X402-PAY-01 — real-funds x402 v2 (EIP-3009 on Base).
+                # Exactly ONE paid attempt: `_x402_paid` short-circuits so a
+                # settlement is never retried, which could double-pay.
+                if status == 402 and self.wallet_key and not headers.get(_X402_HEADER):
+                    paid_header = self._x402_pay(err_data, e.headers)
+                    if paid_header:
+                        headers[_X402_HEADER] = paid_header
+                        continue
 
                 if status == 401:
                     raise AuthenticationError(message, status_code=status)
                 elif status == 402:
                     raise PaymentRequiredError(
-                        f"x402 payment required. Top up ecash at craigmbrown.com/blindoracle. Detail: {message}",
-                        status_code=status,
+                        self._payment_help(message), status_code=status,
                     )
                 elif status == 404:
                     raise MarketNotFoundError(message, status_code=status)

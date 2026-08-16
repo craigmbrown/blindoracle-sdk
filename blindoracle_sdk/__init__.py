@@ -45,7 +45,13 @@ from blindoracle_sdk.delegation import (
     DELEGATION_KIND,
 )
 
-__version__ = "0.7.0"
+# RQ-BO-SKU-DOGFOOD-01: derived from package metadata via _version, so
+# pyproject.toml is the ONE source of truth. The hand-maintained literal that
+# used to live here went stale for two releases (pyproject 0.9.0 vs
+# __version__ 0.7.0) — see blindoracle_sdk/_version.py for the blast radius.
+from blindoracle_sdk._version import sdk_version as _sdk_version  # noqa: E402
+
+__version__ = _sdk_version()
 __author__ = "Craig Brown"
 __email__ = "craigmbrown@gmail.com"
 __url__ = "https://craigmbrown.com/blindoracle"
