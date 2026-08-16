@@ -21,6 +21,8 @@ import urllib.request
 from pathlib import Path
 from typing import Iterable, Optional
 
+from blindoracle_sdk._version import user_agent as _user_agent
+
 # public Base RPCs for keyless anchor read-back (fallback chain)
 _BASE_MAINNET_RPC = ["https://mainnet.base.org", "https://base.llamarpc.com"]
 _BASE_SEPOLIA_RPC = ["https://sepolia.base.org"]
@@ -131,7 +133,7 @@ def _rpc(urls, method, params, timeout=15):
     for url in urls:
         try:
             req = urllib.request.Request(url, data=body, headers={
-                "content-type": "application/json", "User-Agent": "blindoracle-sdk/0.2"})
+                "content-type": "application/json", "User-Agent": _user_agent()})
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 return json.loads(r.read().decode()).get("result")
         except Exception as e:  # noqa: BLE001

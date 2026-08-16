@@ -12,6 +12,8 @@ import urllib.parse
 import urllib.error
 from typing import Optional
 
+
+from blindoracle_sdk._version import user_agent as _user_agent
 from blindoracle_sdk.exceptions import (
     BlindOracleError,
     AuthenticationError,
@@ -53,7 +55,10 @@ class BlindOracleClient:
     """
 
     DEFAULT_BASE_URL = "https://api.craigmbrown.com/v1"
-    USER_AGENT = "blindoracle-sdk-python/0.8.0"
+    # RQ-BO-SKU-DOGFOOD-01: derived, never a literal. Three hardcoded User-Agent
+    # strings across this SDK ("…/0.8.0", "…/1.x", "…/0.2") meant the gateway
+    # could not attribute a call to the SDK build that made it.
+    USER_AGENT = _user_agent()
 
     # Full-jitter exponential backoff (AWS "Exponential Backoff And Jitter").
     # A whole fleet of agents retrying in lockstep is a thundering herd; jitter
