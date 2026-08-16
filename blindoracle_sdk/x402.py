@@ -65,6 +65,12 @@ CHALLENGE_HEADER = "payment-required"
 SUPPORTED_X402_VERSIONS = (2,)
 SUPPORTED_SCHEMES = ("exact",)
 
+#: Floor for the authorization validity window. A challenge may advertise
+#: ``maxTimeoutSeconds: 60``, but under scheme ``exact`` the FACILITATOR submits
+#: the transaction, so the window must outlast verify + settle + block inclusion.
+#: Signing a 60-second authorization produces an opaque facilitator failure.
+_MIN_VALIDITY_SECONDS = 300
+
 #: Atomic-unit decimals per (network, asset). Deliberately an explicit registry:
 #: an unknown asset must REFUSE rather than assume 18 or 6, because a wrong
 #: exponent mis-scales a real payment by 10^12.
@@ -116,11 +122,15 @@ class PaymentChallenge:
 
     __slots__ = ("scheme", "network", "asset", "amount_atomic", "pay_to",
                  "max_timeout_seconds", "domain_name", "domain_version",
-                 "chain_id", "decimals", "resource_url", "raw")
+                 "chain_id", "decimals", "resource_url", "raw", "entry")
 
     def __init__(self, entry: Dict[str, Any], resource_url: str = "",
                  raw: Optional[Dict[str, Any]] = None):
         self.raw = raw or {}
+        #: The server's own `accepts` entry, echoed back in the payment payload's
+        #: `accepted` field. The facilitator validates the echo against what it
+        #: issued, so it must be the ORIGINAL dict, not a reconstruction.
+        self.entry = entry
         self.resource_url = resource_url
 
         self.scheme = entry.get("scheme")
@@ -342,7 +352,11 @@ def build_payment_header(
 
     ts = int(now if now is not None else time.time())
     valid_after = 0
-    valid_before = ts + max(challenge.max_timeout_seconds, 60)
+    # The floor is deliberate and NOT cosmetic: the facilitator submits the
+    # transaction on your behalf, so the window has to outlast verify + settle +
+    # block inclusion. A challenge's `maxTimeoutSeconds` of 60 expires under the
+    # facilitator, and the failure surfaces as an opaque verify/settle error.
+    valid_before = ts + max(challenge.max_timeout_seconds, _MIN_VALIDITY_SECONDS)
     nonce = "0x" + secrets.token_hex(32)
 
     message = {
@@ -368,14 +382,24 @@ def build_payment_header(
     )
     signed = account.sign_message(signable)
 
-    payload = {
+    sig = signed.signature.hex()
+    if not sig.startswith("0x"):
+        sig = "0x" + sig
+
+    # Canonical x402 v2 PaymentPayload: {x402Version, payload, accepted, resource,
+    # extensions}. NOTE the shape differs from v1, which carried `scheme` and
+    # `network` at the top level — sending the v1 shape makes the CDP facilitator
+    # reject with "'paymentPayload' is invalid: must match one of [x402V2Payment…".
+    # `accepted` echoes the server's own requirements so the facilitator can check
+    # the signature against what it actually issued.
+    accepted = {k: challenge.entry[k] for k in
+                ("scheme", "network", "asset", "amount", "payTo",
+                 "maxTimeoutSeconds", "extra")
+                if k in challenge.entry}
+    payload: Dict[str, Any] = {
         "x402Version": 2,
-        "scheme": challenge.scheme,
-        "network": challenge.network,
         "payload": {
-            "signature": signed.signature.hex()
-            if signed.signature.hex().startswith("0x")
-            else "0x" + signed.signature.hex(),
+            "signature": sig,
             "authorization": {
                 "from": account.address,
                 "to": challenge.pay_to,
@@ -385,7 +409,13 @@ def build_payment_header(
                 "nonce": nonce,
             },
         },
+        "accepted": accepted,
     }
+    if challenge.raw.get("resource"):
+        payload["resource"] = challenge.raw["resource"]
+    extensions = challenge.entry.get("extensions") or challenge.raw.get("extensions")
+    if extensions:
+        payload["extensions"] = extensions
     header_value = base64.b64encode(
         json.dumps(payload, separators=(",", ":")).encode("utf-8")
     ).decode("ascii")

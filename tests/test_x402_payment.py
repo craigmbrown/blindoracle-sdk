@@ -231,9 +231,44 @@ def test_every_signed_field_comes_from_the_challenge(acct):
     assert auth["to"] == TREASURY                    # from challenge.payTo
     assert auth["value"] == "10000"                  # from challenge.amount
     assert auth["from"] == acct.address              # from our key
-    assert payload["network"] == "eip155:8453"
-    assert payload["scheme"] == "exact"
     assert payload["x402Version"] == 2
+    assert payload["accepted"]["network"] == "eip155:8453"
+    assert payload["accepted"]["scheme"] == "exact"
+    assert payload["accepted"]["asset"] == USDC_BASE
+    assert payload["accepted"]["amount"] == "10000"
+
+
+def test_payload_uses_the_canonical_v2_shape_not_v1(acct):
+    """v1 put `scheme`/`network` at the top level. The CDP facilitator rejects
+    that shape with "'paymentPayload' is invalid: must match one of
+    [x402V2Payment…" — a real 402 we hit on the first live attempt."""
+    c = parse_challenge(body=LIVE)
+    _, payload = build_payment_header(c, private_key=acct.key.hex(), **CAPS)
+    assert "accepted" in payload, "v2 requires an `accepted` echo of the requirements"
+    assert "scheme" not in payload, "top-level `scheme` is the v1 shape"
+    assert "network" not in payload, "top-level `network` is the v1 shape"
+    assert payload["resource"]["url"].endswith("agent.trust-badge")
+
+
+def test_accepted_echoes_the_servers_own_entry(acct):
+    """The facilitator checks the echo against what it issued, so it must be the
+    server's values verbatim — not a reconstruction."""
+    c = parse_challenge(body=LIVE)
+    _, payload = build_payment_header(c, private_key=acct.key.hex(), **CAPS)
+    for k in ("scheme", "network", "asset", "amount", "payTo",
+              "maxTimeoutSeconds", "extra"):
+        assert payload["accepted"][k] == LIVE["accepts"][0][k]
+
+
+def test_validity_window_has_a_floor_for_the_facilitator(acct):
+    """`exact` is gasless: the FACILITATOR submits, so a 60s window (what the
+    live challenge advertises) expires under it and fails opaquely."""
+    c = parse_challenge(body=LIVE)
+    assert c.max_timeout_seconds == 60
+    _, payload = build_payment_header(c, private_key=acct.key.hex(),
+                                      now=1_000_000, **CAPS)
+    window = int(payload["payload"]["authorization"]["validBefore"]) - 1_000_000
+    assert window >= 300, f"validity window {window}s is too short to settle"
 
 
 def test_validity_window_derives_from_max_timeout(acct):
