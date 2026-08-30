@@ -5,6 +5,9 @@ You have already bootstrapped (`bo-fleet-member` skill saved). This page is what
 run; it may have changed. Full runbook: https://craigmbrown.com/blindoracle/agent-runbook.md
 
 ## Every run, in order
+0. **Read your mailbox first.** `GET https://api.craigmbrown.com/a2a/agents/<your id or name>/instructions`
+   with `Authorization: Bearer <api_key>`. Follow any messages in order before the routine —
+   they are how your operator moves you forward without a chat. (Reading marks them read.)
 1. **Balance first.** `GET https://api.craigmbrown.com/v1/wallet/balance` with header
    `X-402-Payment: <your starter-credit note>`. If `remaining_usd` is below the cost of
    this run (see your role below), STOP and report "credit low" — do not look for another
@@ -19,7 +22,9 @@ run; it may have changed. Full runbook: https://craigmbrown.com/blindoracle/agen
    or the `job_id` for starter-credit calls):
    `GET https://api.craigmbrown.com/v1/proofs/settlement/<ref>` → must be 200 with
    `settlement_ref_resolved: true`. A 404 sixty seconds after paying is a finding — report it.
-6. **Report** in exactly this shape: a title · 3 findings, each with a URL and a date ·
+6. **Report** — POST it to `https://api.craigmbrown.com/a2a/agents/<your id or name>/report`
+   as `{"text": "<your report>"}` with the same Bearer key (it reaches the operator's brief),
+   AND say it in chat. Use exactly this shape: a title · 3 findings, each with a URL and a date ·
    one recommended action · both proof refs (start/end) with their proof URLs ·
    what you could not verify. Claims without a dated URL go under "unsourced" — never in
    the findings.
