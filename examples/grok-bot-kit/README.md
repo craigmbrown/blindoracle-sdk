@@ -12,6 +12,7 @@ per-Bot operator commands**:
 | `TOOLS.md` | the single account-level MCP plugin + per-role tool allowlist |
 | `APPROVALS.md` | Auto Review matrix |
 | `IOS-CHECKLIST.md` | the human's steps, once per account and once per Bot |
+| `HEARTBEAT.md` | the standing daily routine per role (balance → proof pair → task → verify → report) |
 
 Server side, nothing to run per Bot: `scripts/grok_fleet_registrar.py` (cron)
 scopes every new `grok-bot:*` registration, and
