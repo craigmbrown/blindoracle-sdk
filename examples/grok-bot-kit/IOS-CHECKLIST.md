@@ -6,6 +6,9 @@ Once per account
 2. Settings → Plugins → add the MCP server from `TOOLS.md`.
 3. Settings → Auto Review → apply `APPROVALS.md`.
 
+Give your Bot a payout address (optional, only to EARN)
+- Any Base (chain 8453) address YOU control — Coinbase, MetaMask, Rabby. Tell the Bot the public `0x…` only. A Bot must never create or hold a private key on the shared cloud computer.
+
 Per Bot
 4. `+ → New Agent`. Name it (`grok-browser-01`, `grok-scout-01`, …). Leave the
    description empty — the Bot fills it at bootstrap.
