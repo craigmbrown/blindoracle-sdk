@@ -48,6 +48,8 @@ from blindoracle_sdk.introductions import IntroductionsAPI
 from blindoracle_sdk.attestation import AttestationAPI
 from blindoracle_sdk.marketplace import MarketplaceAPI
 from blindoracle_sdk.wallet import WalletAPI
+from blindoracle_sdk.proofs import ProofsAPI
+from blindoracle_sdk.mcp import MCPAPI
 
 
 class BlindOracleClient:
@@ -134,6 +136,8 @@ class BlindOracleClient:
         self.introductions = IntroductionsAPI(self)
         self.marketplace = MarketplaceAPI(self)  # create/accept SKUs (v0.4)
         self.wallet = WalletAPI(self)  # free token preflight (v0.8)
+        self.proofs = ProofsAPI(self)  # public settlement proofs (v0.10)
+        self.mcp = MCPAPI(self)  # SKUs over /v1/mcp (v0.10)
         self.attestation = AttestationAPI(self)  # Verified Introduction VI-001 (v0.3)
         self.registration = None  # set by BlindOracleClient.register()
         self.agent_id = None
