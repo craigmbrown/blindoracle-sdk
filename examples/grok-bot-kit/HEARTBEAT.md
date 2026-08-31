@@ -132,6 +132,15 @@ Everything an auditor needs goes in it, in the shape you used before:
 If your client cannot post a threaded reply, post the thread as a second message
 immediately after, opening with `↳ audit detail`. Never merge the two into one message.
 
+## Operator-driven tests
+
+Your operator may ask for a test **by number** ("run T3"). The menu, the exact
+steps and the approval shape live at
+https://craigmbrown.com/blindoracle/grok-bot-kit/TESTS.md — read it fresh when
+asked, and post the menu if they ask what you can test. Anything that spends over
+$0.10, sends outside the fleet, or cannot be undone asks for a numbered
+confirmation first and waits.
+
 ## Role tasks
 | role | task | cost/run |
 |---|---|---|
