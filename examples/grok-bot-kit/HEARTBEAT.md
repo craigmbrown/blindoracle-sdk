@@ -22,12 +22,68 @@ run; it may have changed. Full runbook: https://craigmbrown.com/blindoracle/agen
    or the `job_id` for starter-credit calls):
    `GET https://api.craigmbrown.com/v1/proofs/settlement/<ref>` → must be 200 with
    `settlement_ref_resolved: true`. A 404 sixty seconds after paying is a finding — report it.
-6. **Report** — POST it to `https://api.craigmbrown.com/a2a/agents/<your id or name>/report`
-   as `{"text": "<your report>"}` with the same Bearer key (it reaches the operator's brief),
-   AND say it in chat. Use exactly this shape: a title · 3 findings, each with a URL and a date ·
-   one recommended action · both proof refs (start/end) with their proof URLs ·
-   what you could not verify. Claims without a dated URL go under "unsourced" — never in
-   the findings.
+6. **Report in two tiers** — see **Reporting** below. POST the full report to
+   `https://api.craigmbrown.com/a2a/agents/<your id or name>/report` as
+   `{"text": "<post>\n\n---\n<thread>"}` with the same Bearer key (it reaches the operator's
+   brief), AND say it in chat as **a post plus a threaded reply**.
+
+## Reporting — post first, evidence in the thread
+
+Your operator reads the post. They open the thread only when they want the receipts. Put
+the two in the wrong order and a useful run reads like a wall of hex.
+
+### The post — what you say in chat
+
+Plain language, for someone who does not know what a `job_id` is. Four lines at most:
+
+- **A title** naming what completed and what it was worth.
+- **2–4 value statements** — what you did, what it produced, what changed as a result.
+  Say who you worked with by name (`bo-scout`, the operator, the server), not by id.
+  A server refusal is a value statement too: *"the extractor refused the page as unsafe,
+  so there is no summary this run."*
+- **One recommended action**, or the words **"No action needed."**
+- **Nothing else.**
+
+**Never put in the post:** job/bid/request ids, proof ids, tx hashes, settlement refs,
+timestamps, HTTP status codes, rail names, token counts, file paths, or a URL that is not
+a source you are citing. All of that is thread material. If a line only means something to
+an engineer, it belongs in the thread.
+
+### The thread — the reply underneath
+
+Everything an auditor needs, in the shape you used before:
+
+- **Findings** — 3, each with a URL and a date. Claims without a dated URL go under
+  **unsourced**, never in findings.
+- **Proof refs** — both (start and end) with their
+  `https://api.craigmbrown.com/v1/proofs/settlement/<ref>` URLs.
+- **On-chain / settlement** — rail, amount, and the Base tx hash if there was one. Say
+  plainly when there was none: starter-credit runs have no `0x` hash and that is normal.
+- **Ids** — job, bid, request, so the run can be replayed.
+- **Could not verify** — what you tried and could not confirm.
+
+### Worked example
+
+> **Post (chat message)**
+>
+> **Scanned x402 payment news — 3 sources, $0.07 spent, all receipts verify.**
+> Found two dated primary sources on agent-payment rails and one that only repeated a press
+> release, so I dropped it. Nothing contradicts what we published last week. The server paid
+> and closed both proof calls without error.
+> **Recommended:** no action needed.
+
+> **Threaded reply (posted as a reply to the post above)**
+>
+> findings — 1. <url> (2026-08-30) … 2. <url> (2026-08-29) … 3. <url> (2026-08-31)
+> unsourced — one claim about volume, no dated source found
+> proofs — start `agent.trust-badge` so-30120-… → /v1/proofs/settlement/…
+>  ·  end `reputation.lookup` so-30120-… → /v1/proofs/settlement/…
+> settlement — rail `bo_starter_credit`, $0.07, no Base tx (starter credit never has one)
+> ids — request …, bid …, job …
+> could not verify — whether source 2's figure is first-party; its citation 404s
+
+If your client cannot post a threaded reply, post the thread as a second message
+immediately after, opening with `↳ audit detail`. Never merge the two into one message.
 
 ## Role tasks
 | role | task | cost/run |
