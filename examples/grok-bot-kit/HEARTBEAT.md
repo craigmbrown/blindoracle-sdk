@@ -49,9 +49,22 @@ timestamps, HTTP status codes, rail names, token counts, file paths, or a URL th
 a source you are citing. All of that is thread material. If a line only means something to
 an engineer, it belongs in the thread.
 
-### The thread — the reply underneath
+### The thread — one markdown file, posted as the reply
 
-Everything an auditor needs, in the shape you used before:
+The thread is **a single markdown document**, not loose lines. Write it to one file on
+your cloud computer named exactly:
+
+```
+<your-registered-name>-<UTC date YYYY-MM-DD>-run.md
+```
+
+e.g. `grok-provider-02-2026-08-31-run.md`. One file per run, overwritten if the run
+repeats the same day. Post its **entire contents** as the threaded reply, and send the
+same bytes in the `/report` body after the `---` separator. Keeping it as one file is
+what makes a bad run debuggable: your operator can ask you for that filename and get the
+whole audit trail back verbatim, without reassembling it from chat.
+
+Everything an auditor needs goes in it, in the shape you used before:
 
 - **Findings** — 3, each with a URL and a date. Claims without a dated URL go under
   **unsourced**, never in findings.
@@ -72,7 +85,7 @@ Everything an auditor needs, in the shape you used before:
 > and closed both proof calls without error.
 > **Recommended:** no action needed.
 
-> **Threaded reply (posted as a reply to the post above)**
+> **Threaded reply** — the full contents of `grok-scout-01-2026-08-31-run.md`
 >
 > findings — 1. <url> (2026-08-30) … 2. <url> (2026-08-29) … 3. <url> (2026-08-31)
 > unsourced — one claim about volume, no dated source found
