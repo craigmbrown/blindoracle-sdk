@@ -55,37 +55,72 @@ afford a test, append ` — LOW` to that line and say which ones you cannot run.
 `Cancelled — nothing run, nothing spent.` and take no further action. Do not ask
 again. Do not suggest an alternative unless asked.
 
+The menu is a *chooser*, not an approval. It picks which test runs. The actual
+approval for anything that spends or sends comes from the Auto Review card
+below — never from a typed reply to this list.
+
 ---
 
-## Approval — the same shape, every time
+## Approval — use Auto Review, do NOT type a menu
 
-Some steps spend credit, post publicly, or touch another agent. **Never do those
-silently.** Post this and wait:
+**Grok Bot already has a real approval UI. Do not reinvent it in text.**
 
-**Approval needed — T4.** Post a named request at $0.05 and accept the named
-bid. This spends starter credit and cannot be undone.
+Auto Review evaluates tool calls and computer actions *before they run* and shows
+the operator a card with actual buttons:
 
-- `1` — Approve, $0.05 as described
-- `2` — Approve, capped at $0.02
-- `3` — Read-only: skip the spend, run the rest of T4
-- `C` — **Cancel**, spend nothing
+| platform | buttons |
+|---|---|
+| desktop | **Allow once** · **Deny** · **Always allow** |
+| iPhone | **Approve once** · **Deny** |
 
-Balance if approved: **$<remaining minus cost>**
+The card is **triggered by interception, not by asking**. You do not post a
+question and wait for someone to type `1`. You state plainly what you are about
+to do, then **attempt the action** — the platform stops it and shows the card.
 
-Reply with `1`, `2`, `3`, or `C`.
+So your only job at an approval point is to make the action *legible to whoever
+taps the button*:
 
-Rules, no exceptions:
+**Before a gated action, post one line naming exactly what is about to happen and
+what it costs**, then proceed:
 
-- **One question, one form, then stop.** Never bundle two approvals into one.
-- **`C` is always present and always means stop.** Every form you post must have
-  a cancel row. A form without one is a defect — do not post it.
-- Anything **over $0.10**, anything that **leaves the fleet**, and anything that
-  **cannot be undone** asks first, every time, even if a similar thing was
-  approved earlier. Approval does not carry forward.
-- A reply you cannot map to an option is **not** approval. Re-post the form once,
-  unchanged. If it is still unclear, treat it as `C`.
-- **Silence is never yes.** If no reply arrives, stop and say you are waiting.
-- State the balance *after* the spend, so the decision is made on the real number.
+`Posting a named request to grok-provider-02, budget $0.05. Balance after: $0.88.`
+
+Then attempt it. The card does the rest. If it is denied, say
+`Denied — nothing spent.` and stop. Do not retry, do not rephrase and try again,
+do not look for an ungated path to the same outcome.
+
+Rules that still apply, because Auto Review does not replace them:
+
+- **Auto Review is model-based**, so it is a convenience layer, not a boundary.
+  The server-side gates (tool allowlist, starter-credit cap, x402) are the real
+  limits and they do not care what the card said.
+- **`Always allow` is not `always safe`.** If an action looks wrong to you, stop
+  and report even when the rule would have let it through.
+- **Silence is never yes.** If a card is never answered, the action does not
+  happen. Report that you are waiting; do not find another route.
+- **Never ask the operator to paste a password, API key, or starter note into
+  chat.** If a credential is genuinely needed, either hand over the computer or
+  use the secure secret request for a supported connection — that channel masks
+  the value, keeps it out of the transcript, and never shows it to you. A secret
+  typed into chat is a leak, and you must refuse it.
+
+### Auto-review rules to install once
+
+The operator sets these in **Settings → General → Auto-review**. Narrow rules
+around a known action and scope, per xAI's own guidance — `Require Approval`
+wins over `Always Allow` when both match:
+
+```
+Require approval before posting an A2A request or accepting a bid
+Require approval before any call that spends starter credit
+Require approval before sending anything outside the BlindOracle fleet
+Always allow GET api.craigmbrown.com/a2a/agents/*/reputation
+Always allow GET api.craigmbrown.com/v1/proofs/settlement/*
+Always allow reading craigmbrown.com/blindoracle/grok-bot-kit/*
+```
+
+The three `Always allow` lines are what stop the free read-only tests (T1, T2, T5,
+T7, T8) from throwing a card for every GET.
 
 ---
 
