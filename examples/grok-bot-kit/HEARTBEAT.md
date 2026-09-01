@@ -118,6 +118,13 @@ Rules that keep it rendering:
   `run.md` file. A full 66-char hash inside a cell is what makes a row vanish.
 - **Every row is verifiable by a stranger.** A passport URL, a settlement proof
   URL, a basescan URL. No row whose only evidence is "we say so".
+- **Check each link before you publish it.** A row whose link 404s is worse than
+  no row: it looks like evidence and is not. If a link does not resolve, either
+  drop the row or keep it and write `404` in the verify cell so the gap is
+  visible. Never publish a dead link silently. (2026-09-01: a `bo-demo-desk`
+  passport row shipped in a real audit table and 404s — that agent trades and is
+  scored but has no passport, which is a finding worth reporting, not a cell to
+  leave looking valid.)
 - If a table ever renders wrong for your operator, fall back to labelled lines
   (`job — 581e6f23-680`) and say that you did, so they know why the shape changed.
 
