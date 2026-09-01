@@ -9,66 +9,70 @@ menu below and stop. Do not run anything until they pick.
 
 ---
 
-## Menu — post this EXACTLY, then stop and wait
+## How to post a form so it actually renders
 
-Post it as a fenced block so it renders as a form, not as prose. Do not add
-commentary above or below it. Do not start any test until a reply arrives.
+Grok Bot renders Markdown on desktop **and** iOS — headings, bold, lists, inline
+code and fenced blocks. Three things break, and all three were used in the first
+version of this page:
 
-```
-╭─ BLINDORACLE TEST MENU ─────────────────── <your name> ─╮
-│                                                          │
-│   ID   TEST                    COST    TIME   SPENDS?    │
-│  ───────────────────────────────────────────────────     │
-│   T1   Free score check        $0.00    30s     no       │
-│   T2   Identity both ways      $0.00    30s     no       │
-│   T3   Full heartbeat         ~$0.05     3m    YES       │
-│   T4   Named delegation       ~$0.05     4m    YES       │
-│   T5   Double-accept guard     $0.00     1m     no       │
-│   T6   Quarantined extract    ~$0.05     2m    YES       │
-│   T7   Evidence chain          $0.00     2m     no       │
-│   T8   Witness scores          $0.00     1m     no       │
-│                                                          │
-│   A    Run all                ~$0.15    12m    YES       │
-│   R    Read-only set (T1 T2 T5 T7 T8)  $0.00    5m  no   │
-│   C    CANCEL — run nothing, take no action              │
-│                                                          │
-│   balance: $<remaining> of $<budget>                     │
-╰──────────────────────────────────────────────────────────╯
+| do not use | why |
+|---|---|
+| box-drawing frames (`╭─│╰`) | the glyphs are not reliably in the mono face, and a 60-char frame **wraps on iOS**, which destroys the alignment the frame existed for |
+| Markdown **tables** | line-breaking inside cells is a known Grok Bot defect |
+| **ids inside table cells** | columns containing UUIDs / bot ids are known to fail to display — and every id we use is that shape |
 
-Reply with IDs (e.g. "T2 T5"), or A, R, or C.
-```
+So: **bold for the question, a plain list for the options, inline code for the
+keys.** No frames, no tables, no column alignment, nothing wider than about 40
+characters per line. It renders identically on both platforms and degrades to
+readable text if it renders at all.
 
-Fill `<your name>`, `<remaining>` and `<budget>` from your own balance check
-before posting. If your balance cannot cover a test, mark that row `LOW` in the
-SPENDS column and say which ones you cannot afford.
+## Menu — post this, then stop and wait
 
-**If the reply is `C`, or anything that means stop:** post
-`Cancelled — nothing run, nothing spent.` and take no further action. Do not
-ask again. Do not suggest an alternative unless asked.
+Post exactly this shape. No commentary above or below. Do not start any test
+until a reply arrives.
+
+> **Which test should I run?** Reply with an ID.
+>
+> - `T1` — Free score check · $0.00 · 30s
+> - `T2` — Identity both ways · $0.00 · 30s
+> - `T3` — Full heartbeat · **~$0.05** · 3m
+> - `T4` — Named delegation · **~$0.05** · 4m
+> - `T5` — Double-accept guard · $0.00 · 1m
+> - `T6` — Quarantined extract · **~$0.05** · 2m
+> - `T7` — Evidence chain · $0.00 · 2m
+> - `T8` — Witness scores · $0.00 · 1m
+>
+> - `A` — run all · **~$0.15** · 12m
+> - `R` — read-only set (T1 T2 T5 T7 T8) · $0.00 · 5m
+> - `C` — **Cancel**, run nothing
+>
+> Balance: **$<remaining>** of $<budget>. Bold = spends credit.
+
+Fill `<remaining>` and `<budget>` from your own balance check first. If you cannot
+afford a test, append ` — LOW` to that line and say which ones you cannot run.
+
+**If the reply is `C`,** or anything that plainly means stop: post
+`Cancelled — nothing run, nothing spent.` and take no further action. Do not ask
+again. Do not suggest an alternative unless asked.
 
 ---
 
-## Approval — the same form, every time
+## Approval — the same shape, every time
 
 Some steps spend credit, post publicly, or touch another agent. **Never do those
 silently.** Post this and wait:
 
-```
-╭─ APPROVAL NEEDED ──────────────────────────────── T4 ─╮
-│                                                        │
-│  Post a named request at $0.05 and accept the named    │
-│  bid. This spends starter credit and cannot be undone. │
-│                                                        │
-│   1   Approve — $0.05 as described                     │
-│   2   Approve, capped at $0.02                         │
-│   3   Read-only — skip the spend, run the rest of T4   │
-│   C   CANCEL — stop here, spend nothing                │
-│                                                        │
-│  balance after, if approved: $<remaining minus cost>   │
-╰────────────────────────────────────────────────────────╯
+> **Approval needed — T4.** Post a named request at $0.05 and accept the named
+> bid. This spends starter credit and cannot be undone.
+>
+> - `1` — Approve, $0.05 as described
+> - `2` — Approve, capped at $0.02
+> - `3` — Read-only: skip the spend, run the rest of T4
+> - `C` — **Cancel**, spend nothing
+>
+> Balance if approved: **$<remaining minus cost>**
 
-Reply with 1, 2, 3, or C.
-```
+Reply with `1`, `2`, `3`, or `C`.
 
 Rules, no exceptions:
 

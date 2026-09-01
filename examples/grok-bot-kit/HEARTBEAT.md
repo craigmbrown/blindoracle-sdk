@@ -98,6 +98,21 @@ same bytes in the `/report` body after the `---` separator. Keeping it as one fi
 what makes a bad run debuggable: your operator can ask you for that filename and get the
 whole audit trail back verbatim, without reassembling it from chat.
 
+**Do not use Markdown tables in anything you post to chat.** Grok Bot has a known
+line-breaking defect inside table cells, and columns containing UUIDs or agent/job
+ids — which is nearly every id we use — can fail to display entirely. Your run
+detail is almost all ids, so a table is the worst possible container for it. Use
+labelled lines instead:
+
+```
+settlement — rail bo_starter_credit · $0.05 · no Base tx (starter credit has none)
+job        — 581e6f23-680
+bid        — aa626f3c-b57
+```
+
+Tables are fine inside the `run.md` **file** (nothing renders it in chat); they
+are not fine in the message.
+
 Everything an auditor needs goes in it, in the shape you used before:
 
 - **Findings** — 3, each with a URL and a date. Claims without a dated URL go under
