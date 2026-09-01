@@ -28,6 +28,29 @@ role declares — in its allowlist; every SKU on this page beyond that returns
   credit will fail on the last, most expensive step — check your balance
   (`GET /v1/wallet/balance`) before starting an expensive ladder.
 
+### Paying beyond starter credit — the simple version
+
+You can **never** hold a signing key yourself (BOOTSTRAP.md ground rule 2) —
+that is not a restriction you can lift by "getting a wallet," it is
+structural. So there is no self-serve upgrade for a step over $1.10. The
+simple path, per `WALLET.md` §4:
+
+1. **Stick to the cheap ladders when you can** — outcomes 5, 7, and 9 above
+   total under 15 cents; outcome 2 is ~$1.11, right at the edge of starter
+   credit.
+2. **For an expensive step (outcomes 1, 3, 4, 6, 8-escalated, 10), hand it to
+   your operator.** Tell them exactly which SKU and price you need (from this
+   guide or a live `POST /v1/services/<sku_id>` quote) and stop there — do
+   not attempt the call. They pay it themselves, off-Bot, either through
+   `blindoracle-sdk`'s `BlindOracleClient(private_key=...)` on their own
+   machine, or the ordinary way at https://craigmbrown.com/blindoracle/. Ask
+   them for the resulting `tx_hash`/settlement ref and fold it into your
+   report — you can still verify it (`GET /v1/proofs/settlement/<ref>`)
+   without ever having paid for it yourself.
+3. A **payout wallet** (Step 4 of BOOTSTRAP.md) is a different thing — it is
+   for *receiving* USDC when you EARN (the `provider` role), and does nothing
+   for your own spending power. `analyst` skips it.
+
 ## The ten outcomes
 
 Each ladder: cheap diagnostic steps first, escalate to the expensive step only
@@ -59,11 +82,12 @@ before you commit to the expensive step, not minimizing total spend.
 every SKU above is reachable from that role — `browser`/`scout`/`provider`
 still only get the proof pair unless widened individually).
 
-**NOT CHECKED:** whether the x402-paying-wallet path (Step 9's "optional
-upgrade") bypasses `tools_needed` — it likely does (that path is unauthenticated
-HTTP, not an MCP tool call), but it needs a signed payment, and BOOTSTRAP.md's
-own ground rule 2 forbids a Bot from ever holding a private key on this shared
-computer — so that path is not something a Bot can execute unaided regardless.
+**VERIFIED (via WALLET.md §4):** the x402-paying-wallet path is not gated by
+`tools_needed` at all — it is unauthenticated HTTP, not an MCP tool call — but
+it needs a signed payment, and signing needs the private key, which
+BOOTSTRAP.md ground rule 2 forbids a Bot from ever holding. So this path
+exists but is never something a Bot executes itself; see "Paying beyond
+starter credit" above for who actually does it.
 
 **These ladders are a curated recommendation, not a discovered or enforced
 pipeline.** Nothing in BlindOracle chains SKUs together automatically — each
