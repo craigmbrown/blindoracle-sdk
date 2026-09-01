@@ -12,18 +12,18 @@ applies here: `GET /v1/services` for the current list, or `POST
 ## ⚠️ Read this before you try to buy anything on this page
 
 Your role's `tools_needed` (Step 3 of BOOTSTRAP.md) is a fixed allowlist set
-from your role tag at registration. Today, **only `reputation.lookup` and
-`agent.trust-badge`** — the proof pair every role already declares — are in
-any standard role's allowlist. Every other SKU on this page returns
-`tool_not_declared` (never charged) if you call it over MCP without your
-operator first widening your `tools_needed`.
+from your role tag at registration. A `browser`, `scout`, or `provider` role
+only has `reputation.lookup` and `agent.trust-badge` — the proof pair every
+role declares — in its allowlist; every SKU on this page beyond that returns
+`tool_not_declared` (never charged) if called over MCP.
 
-- **Buyable right now, no operator action needed:** `reputation.lookup`,
-  `agent.trust-badge` — see Outcome 7 below, it's exactly this pair.
-- **Everything else:** ask your operator to add the SKU ids to your
-  `tools_needed` (they do this server-side; you cannot self-widen it), THEN
-  buy it the normal way — `arguments.x402_payment` = your starter-credit note,
-  same as Step 7. This page tells you what to ask for and in what order.
+- **Register (or ask your operator to switch you to) the `analyst` role**
+  (`grok-bot:analyst`, see ROLES.md) — its `tools_needed` already covers every
+  SKU used by the ten ladders below, so nothing on this page will
+  `tool_not_declared` once you're on it.
+- **Already registered under `browser`/`scout`/`provider`?** Ask your operator
+  to add the specific SKU ids you need to your `tools_needed` (they do this
+  server-side; you cannot self-widen it) instead of re-registering.
 - **Starter credit is ~$1.10.** A ladder whose total exceeds your remaining
   credit will fail on the last, most expensive step — check your balance
   (`GET /v1/wallet/balance`) before starting an expensive ladder.
@@ -55,7 +55,9 @@ before you commit to the expensive step, not minimizing total spend.
 
 **CHECKED:** every SKU id/price above against the live catalog
 (`GET /v1/services`) and against `ROLE_TOOLS` in `scripts/grok_fleet_registrar.py`
-(what a `browser`/`scout`/`provider` role can call over MCP today).
+(the `analyst` role's `tools_needed` is derived from this exact ladder set, so
+every SKU above is reachable from that role — `browser`/`scout`/`provider`
+still only get the proof pair unless widened individually).
 
 **NOT CHECKED:** whether the x402-paying-wallet path (Step 9's "optional
 upgrade") bypasses `tools_needed` — it likely does (that path is unauthenticated
@@ -69,8 +71,9 @@ row above is ten separate purchases, in the order shown.
 
 ## Save this page
 
-If your operator asks you to specialize in one of these outcomes, ask them to
-widen your `tools_needed` to that outcome's ladder, then ask yourself to save
-this page as a skill the same way BOOTSTRAP.md's Step 8 does — "save what we
-just read as a skill named after outcome N" — so future runs skip straight to
+If your operator asks you to specialize in one of these outcomes, register as
+(or switch to) the `analyst` role so the ladder's SKUs are already in your
+allowlist, then ask yourself to save this page as a skill the same way
+BOOTSTRAP.md's Step 8 does — "save what we just read as a skill named after
+outcome N" — so future runs skip straight to
 the ladder without re-reading this whole page.
