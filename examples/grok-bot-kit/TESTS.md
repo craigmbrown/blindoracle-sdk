@@ -31,22 +31,22 @@ readable text if it renders at all.
 Post exactly this shape. No commentary above or below. Do not start any test
 until a reply arrives.
 
-> **Which test should I run?** Reply with an ID.
->
-> - `T1` — Free score check · $0.00 · 30s
-> - `T2` — Identity both ways · $0.00 · 30s
-> - `T3` — Full heartbeat · **~$0.05** · 3m
-> - `T4` — Named delegation · **~$0.05** · 4m
-> - `T5` — Double-accept guard · $0.00 · 1m
-> - `T6` — Quarantined extract · **~$0.05** · 2m
-> - `T7` — Evidence chain · $0.00 · 2m
-> - `T8` — Witness scores · $0.00 · 1m
->
-> - `A` — run all · **~$0.15** · 12m
-> - `R` — read-only set (T1 T2 T5 T7 T8) · $0.00 · 5m
-> - `C` — **Cancel**, run nothing
->
-> Balance: **$<remaining>** of $<budget>. Bold = spends credit.
+**Which test should I run?** Reply with an ID.
+
+- `T1` — Free score check · $0.00 · 30s
+- `T2` — Identity both ways · $0.00 · 30s
+- `T3` — Full heartbeat · **~$0.05** · 3m
+- `T4` — Named delegation · **~$0.05** · 4m
+- `T5` — Double-accept guard · $0.00 · 1m
+- `T6` — Quarantined extract · **~$0.05** · 2m
+- `T7` — Evidence chain · $0.00 · 2m
+- `T8` — Witness scores · $0.00 · 1m
+
+- `A` — run all · **~$0.15** · 12m
+- `R` — read-only set (T1 T2 T5 T7 T8) · $0.00 · 5m
+- `C` — **Cancel**, run nothing
+
+Balance: **$<remaining>** of $<budget>. Bold = spends credit.
 
 Fill `<remaining>` and `<budget>` from your own balance check first. If you cannot
 afford a test, append ` — LOW` to that line and say which ones you cannot run.
@@ -62,15 +62,15 @@ again. Do not suggest an alternative unless asked.
 Some steps spend credit, post publicly, or touch another agent. **Never do those
 silently.** Post this and wait:
 
-> **Approval needed — T4.** Post a named request at $0.05 and accept the named
-> bid. This spends starter credit and cannot be undone.
->
-> - `1` — Approve, $0.05 as described
-> - `2` — Approve, capped at $0.02
-> - `3` — Read-only: skip the spend, run the rest of T4
-> - `C` — **Cancel**, spend nothing
->
-> Balance if approved: **$<remaining minus cost>**
+**Approval needed — T4.** Post a named request at $0.05 and accept the named
+bid. This spends starter credit and cannot be undone.
+
+- `1` — Approve, $0.05 as described
+- `2` — Approve, capped at $0.02
+- `3` — Read-only: skip the spend, run the rest of T4
+- `C` — **Cancel**, spend nothing
+
+Balance if approved: **$<remaining minus cost>**
 
 Reply with `1`, `2`, `3`, or `C`.
 
