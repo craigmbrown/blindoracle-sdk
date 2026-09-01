@@ -98,22 +98,37 @@ same bytes in the `/report` body after the `---` separator. Keeping it as one fi
 what makes a bad run debuggable: your operator can ask you for that filename and get the
 whole audit trail back verbatim, without reassembling it from chat.
 
-**Do not use Markdown tables in anything you post to chat.** Grok Bot has a known
-line-breaking defect inside table cells, and columns containing UUIDs or agent/job
-ids — which is nearly every id we use — can fail to display entirely. Your run
-detail is almost all ids, so a table is the worst possible container for it. Use
-labelled lines instead:
+### The audit table — lead the thread with this
 
-```
-settlement — rail bo_starter_credit · $0.05 · no Base tx (starter credit has none)
-job        — 581e6f23-680
-bid        — aa626f3c-b57
-```
+Open every thread with one table so the operator can verify anything in one tap.
+**One row per SKU or test**, and every row ends in a link:
 
-Tables are fine inside the `run.md` **file** (nothing renders it in chat); they
-are not fine in the message.
+| step | ref | verify |
+|---|---|---|
+| passport | `thebaby` | [passport](https://api.craigmbrown.com/a2a/passport/thebaby) |
+| reputation | 53.1 · bronze | [score](https://api.craigmbrown.com/a2a/agents/thebaby/reputation) |
+| T4 job | `581e6f23-680` | [proof](https://api.craigmbrown.com/v1/proofs/settlement/581e6f23-680) |
+| T4 anchor | `0xabdb…46c9` | [basescan](https://basescan.org/tx/0xabdb9bc4aef0044f64a4552788229519f94298ca065dfa1369aa3cc861a046c9) |
 
-Everything an auditor needs goes in it, in the shape you used before:
+Rules that keep it rendering:
+
+- **Three columns, never more.** Width is what breaks Grok Bot tables.
+- **Abbreviate long refs in the cell** — `0xabdb…46c9`, first 4 and last 4. The
+  full value goes in the link target, where length costs nothing, and in the
+  `run.md` file. A full 66-char hash inside a cell is what makes a row vanish.
+- **Every row is verifiable by a stranger.** A passport URL, a settlement proof
+  URL, a basescan URL. No row whose only evidence is "we say so".
+- If a table ever renders wrong for your operator, fall back to labelled lines
+  (`job — 581e6f23-680`) and say that you did, so they know why the shape changed.
+
+Include a **passport row for every agent that touched the job** — you, the
+counterparty, and the buyer. That is the link that shows what each side bought,
+sold, earned and was paid, plus their real reputation score.
+
+Where there is **no on-chain tx**, say so in the cell rather than leaving it
+empty: `none (starter credit)`. An empty cell reads as an omission.
+
+Then, below the table:
 
 - **Findings** — 3, each with a URL and a date. Claims without a dated URL go under
   **unsourced**, never in findings.
