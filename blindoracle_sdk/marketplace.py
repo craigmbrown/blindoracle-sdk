@@ -238,6 +238,23 @@ class MarketplaceAPI:
         }
         return self._client.gw_post(f"/a2a/requests/{request_id}/bids", body)
 
+    # -- v0.10 (2026-08-30) ---------------------------------------------------
+    def get_request(self, request_id: str) -> dict:
+        """One request with its bids AND ``jobs[]`` (``GET /a2a/requests/{rid}``, free).
+
+        ``bid()`` returns 201 ``bid_submitted`` — that is NOT an assignment. Poll
+        this until ``jobs[]`` carries your job, then ``complete()`` it.
+        """
+        return self._client.gw_get(f"/a2a/requests/{request_id}")
+
+    def input_schema(self, sku_id: str) -> Optional[dict]:
+        """The SKU's real ``input_schema`` from the catalog (top-level structured
+        fields reach handlers — no need to duplicate them into ``task``)."""
+        for row in self._client.gw_get("/v1/services").get("services") or []:
+            if row.get("sku_id") == sku_id:
+                return row.get("input_schema")
+        return None
+
     # -- seller: claim + fulfil -------------------------------------------
     def claimable(self, skus: Optional[List[str]] = None) -> List[dict]:
         """Jobs a provider can fulfil (accepted, not yet delivered)."""

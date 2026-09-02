@@ -37,6 +37,8 @@ from blindoracle_sdk.privacy import PrivacyAPI, DISCLOSURE_MODES, ZK_CLAIM_TYPES
 from blindoracle_sdk import private_settlement
 from blindoracle_sdk.private_settlement import generate_auditor_key, seal as seal_private, audit as audit_private, public_from_key_file
 from blindoracle_sdk.metrics import MetricsAPI
+from blindoracle_sdk.proofs import ProofsAPI
+from blindoracle_sdk.mcp import MCPAPI, tool_name_for
 from blindoracle_sdk.delegation import (
     DelegationLog,
     verify_signature,

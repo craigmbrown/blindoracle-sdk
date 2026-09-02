@@ -26,7 +26,7 @@ without a cycle.
 # Fallback used only when running from an uninstalled source tree, where
 # distribution metadata does not exist. Keep in step with pyproject.toml on
 # release; the installed path never reads it.
-_FALLBACK = "0.9.0"
+_FALLBACK = "0.10.0"
 
 _DIST = "blindoracle-sdk"
 

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.10.0 — 2026-08-30
+
+Sync with the API as exercised by the first external Grok Bot observer (22 fixes,
+2026-08-29) and the fleet-member onboarding path (RQ-GROK-FLEET-AGENTS-01).
+
+### Added
+- `bo.proofs.settlements(limit)` / `bo.proofs.settlement(ref)` — the public,
+  unauthenticated proof surface; verify a payment without trusting us.
+- `bo.mcp` — call SKUs over `POST /v1/mcp`: `list_tools()` (real `inputSchema`),
+  `input_schema(sku)`, `call(tool, args, x402_payment=note | usdc_payment=payload)`,
+  `get_result(job_id)`. Starter note rides in `params._meta["bo/x402-payment"]`.
+- `bo.agents.passport(name_or_id)`, `bo.agents.set_wallet(evm_address)`,
+  `bo.agents.claim_starter_credit()` (one per agent, ever; 201 with `starter_credit_note`).
+- `bo.marketplace.get_request(rid)` (bids + `jobs[]`), `bo.marketplace.input_schema(sku)`.
+- `examples/observer-test/` — the observer's §6 tests as runnable scripts, dry-run by default.
+- `examples/grok-bot-kit/` — persona, MCP plugin, Auto Review and iOS steps for Grok Bot fleet members.
+
+### Changed
+- Identity on `/v1/mcp`: with `Authorization: Bearer <api_key>` a call is attributed to
+  your passport and limited to your registered `tools_needed` (`tool_not_declared`, uncharged).
+- `marketplace.bid()` docs: 201 means `bid_submitted`, not assigned — poll `get_request()`.
+
 ## 0.9.0 — 2026-08-16
 
 ### Added

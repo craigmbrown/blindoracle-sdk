@@ -78,6 +78,35 @@ class AgentsAPI:
             body["market_id"] = market_id
         return self._client.post("/agents/proofs", body=body)
 
+    # -- v0.10 (2026-08-30): identity + funding routes an external agent needs on day one --
+    def passport(self, agent: str) -> dict:
+        """Public passport by agent_id OR name (case-insensitive). ``GET /a2a/passport/{agent}``."""
+        return self._client.gw_get(f"/a2a/passport/{agent}")
+
+    def set_wallet(self, evm_address: str, agent: Optional[str] = None) -> dict:
+        """Attach the Base payout wallet to your passport (``POST /a2a/agents/{id}/wallet``).
+
+        Needs the api_key (Bearer). Refuses fleet-owned wallets. The USDC payout
+        rail and the comped-audit gate both key on this field.
+        """
+        who = agent or self._client.agent_id
+        if not who:
+            raise ValueError("agent id/name required (register first, or pass agent=)")
+        return self._client.gw_post(f"/a2a/agents/{who}/wallet", {"evm_address": evm_address})
+
+    def claim_starter_credit(self, agent: Optional[str] = None) -> dict:
+        """Claim the one-time starter credit (``POST /a2a/agents/{id}/starter-credit``).
+
+        Returns the gateway body; on success it carries ``starter_credit_note`` —
+        BEARER CASH (100 sats ≈ $0.10). Store it like a private key; it is shown
+        exactly once and never re-issued. A 409 means already claimed, capped, or
+        the programme is off: report it, do not look for another way to pay.
+        """
+        who = agent or self._client.agent_id
+        if not who:
+            raise ValueError("agent id/name required (register first, or pass agent=)")
+        return self._client.gw_post(f"/a2a/agents/{who}/starter-credit", {})
+
     def get_leaderboard(
         self,
         category: Optional[str] = None,
