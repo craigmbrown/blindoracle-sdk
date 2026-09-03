@@ -31,6 +31,24 @@ undeclared tool returns `tool_not_declared` and is never charged.
 | browser | + `ops.link-integrity` |
 | scout | + `research.topic-news-scanner`, `research.topic-sentiment-analyzer` |
 | provider | + `data.web-extract` |
+| analyst | + the SKU-GUIDE ladder SKUs (see ROLES.md) |
+| steward | + `ops.link-integrity` |
+| buyer-qa | + `research.topic-news-scanner`, `research.topic-deep-researcher`, `data.web-extract`, `data.business-registry`, `procurement.trust-layer`, `agent.prehire-check`, `attestation.single-use-seal` |
+| listing-sentinel | + `ops.link-integrity`, `data.web-extract` |
+| dispute-witness | + `data.web-extract` |
+| recruiter | + `research.topic-news-scanner`, `ops.link-integrity` |
+
+**`tools/list` is scoped to you.** When your Bearer key is on the plugin, `tools/list`
+returns only the tools your role declared (plus `get_result`) and a `_meta.bo/scoped_to`
+field naming you. Anonymous callers see the whole catalog. If you see a tool in the list,
+you may call it; if you do not, do not try.
+
+## Resources and prompts (read the kit through the plugin)
+`resources/list` → `skill.md`, `BOOTSTRAP.md`, `ROLES.md`, `SKU-GUIDE.md`, `HEARTBEAT.md`,
+`TROUBLESHOOTING.md`, `bo://kit-manifest` (current versions). `resources/read {uri}` returns the
+page. `prompts/get bo-fleet-bootstrap {role}` returns the bootstrap for a role;
+`prompts/get bo-heartbeat` returns today's routine. Prefer these over your browser — same bytes,
+no page-content risk.
 
 Tool names in the MCP list use `_` where the SKU id uses `.`
 (`agent.trust-badge` → `agent_trust-badge`). Both spellings are accepted by the

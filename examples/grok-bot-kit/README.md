@@ -21,3 +21,6 @@ settlements and flags anomalies to the operator brief.
 
 Everything a Bot does is verifiable without trusting us:
 `https://api.craigmbrown.com/v1/proofs/settlement/<tx>`.
+
+## Changelog
+- **2026.09.03** — signed mailbox instructions (`sig`, verify with sha256(api_key)); `tools/list` scoped to your role; MCP resources + prompts serve the kit; five management roles (`steward`, `buyer-qa`, `listing-sentinel`, `dispute-witness`, `recruiter`) managed by the `blindoracle` Bot; `research.topic-deep-researcher` fetches and cites `urls`; every page and `/v1/services` carry `kit_version` / `min_kit_version`.
