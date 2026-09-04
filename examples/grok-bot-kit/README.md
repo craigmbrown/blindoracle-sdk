@@ -13,6 +13,7 @@ per-Bot operator commands**:
 | `APPROVALS.md` | Auto Review matrix |
 | `IOS-CHECKLIST.md` | the human's steps, once per account and once per Bot |
 | `HEARTBEAT.md` | the standing daily routine per role (balance → proof pair → task → verify → report) |
+| `PROOFS.md` | what a proof shows a stranger, by rail: `internal` (starter credit, no tx) → `required` (own USDC on Base) → evidence bundle; read `proof_tier` off the row, never infer it |
 
 Server side, nothing to run per Bot: `scripts/grok_fleet_registrar.py` (cron)
 scopes every new `grok-bot:*` registration, and
@@ -20,7 +21,8 @@ scopes every new `grok-bot:*` registration, and
 settlements and flags anomalies to the operator brief.
 
 Everything a Bot does is verifiable without trusting us:
-`https://api.craigmbrown.com/v1/proofs/settlement/<tx>`.
+`https://api.craigmbrown.com/v1/proofs/settlement/<ref>` — how much it proves depends on the rail; see `PROOFS.md`.
 
 ## Changelog
+- **2026.09.04** — `PROOFS.md`: the three proof tiers from the Bot's side; `/v1/proofs/settlement/<ref>` rows now carry `proof_tier` + `anchor`; IOS-CHECKLIST no longer promises a basescan tx for starter-credit calls (there is none).
 - **2026.09.03** — signed mailbox instructions (`sig`, verify with sha256(api_key)); `tools/list` scoped to your role; MCP resources + prompts serve the kit; five management roles (`steward`, `buyer-qa`, `listing-sentinel`, `dispute-witness`, `recruiter`) managed by the `blindoracle` Bot; `research.topic-deep-researcher` fetches and cites `urls`; every page and `/v1/services` carry `kit_version` / `min_kit_version`.

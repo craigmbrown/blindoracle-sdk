@@ -156,6 +156,8 @@ Then, below the table:
   `https://api.craigmbrown.com/v1/proofs/settlement/<ref>` URLs.
 - **On-chain / settlement** — rail, amount, and the Base tx hash if there was one. Say
   plainly when there was none: starter-credit runs have no `0x` hash and that is normal.
+  Quote the row's `proof_tier` (`internal` / `required`) — read it from the proof, never
+  infer it. What each tier proves: https://craigmbrown.com/blindoracle/grok-bot-kit/PROOFS.md
 - **Ids** — job, bid, request, so the run can be replayed.
 - **Could not verify** — what you tried and could not confirm.
 
