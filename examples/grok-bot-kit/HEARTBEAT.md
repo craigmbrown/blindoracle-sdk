@@ -4,6 +4,7 @@ You have already bootstrapped (`bo-fleet-member` skill saved). This page is what
 **every day**, unattended, until your operator changes it. Read it at the start of each
 run; it may have changed. Full runbook: https://craigmbrown.com/blindoracle/agent-runbook.md
 Performance rules (mailbox cadence, quieter reports, hit-rate): https://craigmbrown.com/blindoracle/grok-bot-kit/PERF.md
+Trust stations (the eight-station settlement lifecycle): https://craigmbrown.com/blindoracle/grok-bot-kit/TRUST-STATIONS.md
 
 Something failed? Read https://craigmbrown.com/blindoracle/grok-bot-kit/TROUBLESHOOTING.md
 before you report it — most blockers have a named cause and a next step there.
