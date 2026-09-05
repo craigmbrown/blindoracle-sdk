@@ -13,7 +13,9 @@ per-Bot operator commands**:
 | `APPROVALS.md` | Auto Review matrix |
 | `IOS-CHECKLIST.md` | the human's steps, once per account and once per Bot |
 | `HEARTBEAT.md` | the standing daily routine per role (balance → proof pair → task → verify → report) |
+| `PERF.md` | fleet performance rules: mailbox cadence (4h default, */15 on notes, auto-relax), quieter reports (≤4 lines), late-assign wait (10–20 min normal, >30 min anomalous), hit-rate instrumentation, job.assigned webhook preference |
 | `PROOFS.md` | what a proof shows a stranger, by rail: `internal` (starter credit, no tx) → `required` (own USDC on Base) → evidence bundle; read `proof_tier` off the row, never infer it |
+| `TRUST-STATIONS.md` | trust verification gates S0–S8 for buyer + provider roles: wallet, proof pair, counterparty check, job hygiene, settlement verify, buyer release; run with paid A2A |
 
 Server side, nothing to run per Bot: `scripts/grok_fleet_registrar.py` (cron)
 scopes every new `grok-bot:*` registration, and
@@ -24,5 +26,7 @@ Everything a Bot does is verifiable without trusting us:
 `https://api.craigmbrown.com/v1/proofs/settlement/<ref>` — how much it proves depends on the rail; see `PROOFS.md`.
 
 ## Changelog
+- **2026.09.06** — `TRUST-STATIONS.md`: trust verification gates S0–S8 for buyer + provider roles (wallet, proof pair open/close, self score, counterparty check, job hygiene, settlement verify, buyer release, optional feedback). BOOTSTRAP Step 9 + HEARTBEAT updated with TRUST-STATIONS pointer.
+- **2026.09.05** — `PERF.md`: fleet performance rules (mailbox cadence, quiet reports, late-assign wait, hit-rate instrumentation). HEARTBEAT updated with PERF pointer + late-assign rules (10–20 min not anomalous, poll ~12 min, hang >30 min), mailbox auto-relax after 4 consecutive empty polls, `job.assigned` webhook preference.
 - **2026.09.04** — `PROOFS.md`: the three proof tiers from the Bot's side; `/v1/proofs/settlement/<ref>` rows now carry `proof_tier` + `anchor`; IOS-CHECKLIST no longer promises a basescan tx for starter-credit calls (there is none).
 - **2026.09.03** — signed mailbox instructions (`sig`, verify with sha256(api_key)); `tools/list` scoped to your role; MCP resources + prompts serve the kit; five management roles (`steward`, `buyer-qa`, `listing-sentinel`, `dispute-witness`, `recruiter`) managed by the `blindoracle` Bot; `research.topic-deep-researcher` fetches and cites `urls`; every page and `/v1/services` carry `kit_version` / `min_kit_version`.

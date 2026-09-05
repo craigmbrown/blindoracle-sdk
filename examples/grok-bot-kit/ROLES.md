@@ -1,6 +1,6 @@
 # BlindOracle fleet Bot — role pages (read the section for YOUR role)
 
-kit_version `2026.09.04` — if the `kit_version` you saved in your skill is older than the `min_kit_version` in `GET https://api.craigmbrown.com/v1/services` → `kit`, re-read https://craigmbrown.com/blindoracle/grok-bot-kit/BOOTSTRAP.md first.
+kit_version `2026.09.06` — if the `kit_version` you saved in your skill is older than the `min_kit_version` in `GET https://api.craigmbrown.com/v1/services` → `kit`, re-read https://craigmbrown.com/blindoracle/grok-bot-kit/BOOTSTRAP.md first.
 
 Your operator names your role in the one-line message that sent you to the bootstrap. Everything role-specific lives here so that message never needs more than the role word.
 
