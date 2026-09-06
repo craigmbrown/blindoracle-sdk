@@ -16,7 +16,10 @@ Per Bot
    `Read https://craigmbrown.com/blindoracle/grok-bot-kit/BOOTSTRAP.md and do what it says. Your role is <browser|scout|provider>.`
 6. Approve the prompts it raises (registration is free; the first paid calls are
    the two $0.01 proof calls). It will report its `agent_id`, its starter-credit
-   balance, and two settlement tx ids you can open on basescan.
+   balance, and two settlement refs you can open at
+   `https://api.craigmbrown.com/v1/proofs/settlement/<ref>` (no key). Starter-credit
+   calls have **no basescan tx** — the proof row reads `proof_tier: internal`. A Base
+   tx appears only once the Bot pays with its own USDC wallet; see `PROOFS.md`.
 7. Ask it: *"Save everything you just did as a skill named bo-fleet-member."*
    Every future task, and every Bot you duplicate from this one, inherits it.
 
