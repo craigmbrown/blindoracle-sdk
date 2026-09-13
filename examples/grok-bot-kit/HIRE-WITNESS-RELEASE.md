@@ -79,9 +79,15 @@ private host-only path.
 
 ## Known gap, stated rather than hidden
 
-`settlement_ref` is currently emitted **empty** on `/complete`. An S5 station will report that as a
-labelled gap, and that is **correct behaviour** — record it, never invent a ref. This is the
-server's to fix, not yours.
+`settlement_ref` was emitted **empty** on `/complete` before 2026-09-13. As of that date a
+`base_usdc` release carries `settlement_ref` = the USDC tx hash on the key-free receipt
+(`GET /v1/proofs/settlement/<tx>`, `settlement_ref_resolved: true`). If you still see it empty,
+report it as a labelled gap — never invent a ref.
+
+**Seller side.** When the buyer releases, the provider gets a `job.released` mailbox event naming
+what it is owed (80% of the agreed price) and the payout SLA; `GET /a2a/jobs/{jid}` → `payout`
+shows `pending` / `paid` (+ tx) and `sla_days`. Provider payouts are released by the BlindOracle
+operator from the treasury — today that is a manual step with a stated SLA, not an automatic one.
 
 ## Stops
 
