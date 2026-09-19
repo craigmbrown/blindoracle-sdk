@@ -18,10 +18,15 @@ import json
 import os
 import re
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable, Optional
 
 from blindoracle_sdk._version import user_agent as _user_agent
+
+# Keep in sync with scripts/audit_validity.py (fleet canonical).
+_TTL_DAYS = {"declaration": 14, "observed_artifacts": 90, "runtime": 7}
+_CAP_DAYS = {"declaration": 30, "observed_artifacts": 90, "runtime": 14}
 
 # public Base RPCs for keyless anchor read-back (fallback chain)
 _BASE_MAINNET_RPC = ["https://mainnet.base.org", "https://base.llamarpc.com"]
@@ -87,6 +92,26 @@ def redact(text: str) -> tuple:
             else:
                 out = rx.sub(f"[REDACTED:{label}]", out)
     return out, sorted(set(found))
+
+
+_PREVIEW_CAPS = (
+    ("bash", "Bash", "ASI02", "high"),
+    ("write", "Write", "ASI05", "high"),
+    ("web", "WebFetch", "ASI01", "medium"),
+    ("send", "WhatsApp", "ASI02", "high"),
+    ("delegate", "Task", "ASI03", "medium"),
+)
+
+
+def _preview_cap_findings(tools_line: str) -> list:
+    """Declared-tool flags only. Same idea as the fleet capability scorer, not MASSAT."""
+    blob = (tools_line or "").lower()
+    out = []
+    for cap, needle, asi, sev in _PREVIEW_CAPS:
+        if needle.lower() in blob or cap in blob:
+            out.append({"id": f"CAP-{cap.upper()}", "asi": asi, "severity": sev,
+                        "detail": f"declared tools mention {needle}"})
+    return out
 
 
 class AuditAttestation:
@@ -257,6 +282,104 @@ class AuditAPI:
         canon = json.dumps(sorted(manifest.items()), separators=(",", ":"))
         return hashlib.sha256(canon.encode()).hexdigest()
 
+    @staticmethod
+    def evidence_class(*, send_contents: bool = False, runtime: bool = False) -> str:
+        if runtime:
+            return "runtime"
+        if send_contents:
+            return "observed_artifacts"
+        return "declaration"
+
+    @staticmethod
+    def expires_at(issued_at: str, evidence_class: str = "declaration") -> str:
+        """issued_at + class TTL. issued_at is ISO-8601."""
+        from datetime import timedelta
+        s = str(issued_at).replace("Z", "+00:00")
+        issued = datetime.fromisoformat(s)
+        if issued.tzinfo is None:
+            issued = issued.replace(tzinfo=timezone.utc)
+        days = _TTL_DAYS.get(evidence_class, 14)
+        cap = _CAP_DAYS.get(evidence_class, 30)
+        exp = issued + timedelta(days=min(days, cap))
+        return exp.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    def preview(self, paths: Optional[Iterable] = None, declared_tools: str = "",
+                capabilities: Optional[list] = None) -> dict:
+        """Local, no-network capability preview. Not a certificate.
+
+        Same collect() + digest as run(); scores declared tools only. Pay
+        security.massat-audit to bind the digest on the HMAC rail.
+        """
+        payload = self.collect(paths or [], declared_tools=declared_tools,
+                               capabilities=capabilities, send_contents=False)
+        digest = self.subject_digest(payload)
+        tools = str(payload.get("declared_tools") or "")
+        issued = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return {
+            "mode": "preview",
+            "ai_generated": False,
+            "subject_digest": digest,
+            "declared_tools": tools,
+            "capabilities": list(payload.get("capabilities") or []) or None,
+            "evidence_class": "declaration",
+            "issued_at_would_be": issued,
+            "expires_at_would_be": self.expires_at(issued, "declaration"),
+            "findings": _preview_cap_findings(tools),
+            "note": "Preview only. Not a 30105. Source did not leave this machine.",
+            "_local": payload.get("_local") or {},
+        }
+
+    def status(self, *, agent_id: str, certified_agent_id: str, certified_digest: str,
+               issued_at: Optional[str] = None, expires_at: Optional[str] = None,
+               paths: Optional[Iterable] = None, proof_id: Optional[str] = None) -> dict:
+        """Holder-side invalidation: re-hash local files vs the certified digest.
+
+        Refuses to present a foreign proof_id (certified_agent_id != this agent)
+        or a digest that moved after a prompt/code update.
+        """
+        current = None
+        if paths is not None:
+            current = self.subject_digest(self.collect(paths, send_contents=False))
+        try:
+            sys_path_ok = True
+            import sys as _sys
+            from pathlib import Path as _P
+            # fleet checkout: .../Project/blindoracle-sdk/blindoracle_sdk/audit.py
+            fleet = _P(__file__).resolve().parents[2] / "scripts"
+            if (fleet / "audit_validity.py").exists():
+                _sys.path.insert(0, str(fleet.parent))
+                from scripts.audit_validity import pointer_status
+                st = pointer_status(
+                    issued_at=issued_at, expires_at=expires_at,
+                    certified_digest=certified_digest, current_digest=current,
+                    certified_agent_id=certified_agent_id, presenter_agent_id=agent_id,
+                )
+            else:
+                sys_path_ok = False
+        except Exception:
+            sys_path_ok = False
+            st = None
+        if not sys_path_ok:
+            # Standalone SDK: same fail-closed rules without the fleet module.
+            if str(agent_id).strip().lower() != str(certified_agent_id).strip().lower():
+                st = {"badge": "FOREIGN-PROOF", "reason": "presenter != certified agent_id"}
+            elif not issued_at or not expires_at:
+                st = {"badge": "EXPIRED", "reason": "legacy missing issued_at/expires_at"}
+            elif current is not None and current != certified_digest:
+                st = {"badge": "STALE-AUDIT", "reason": "subject_digest moved (agent updated)"}
+            else:
+                st = {"badge": "AUDITED", "reason": "pointer valid (standalone)"}
+        presentable = st.get("badge") == "AUDITED"
+        return {
+            "agent_id": agent_id,
+            "certified_agent_id": certified_agent_id,
+            "certified_digest": certified_digest,
+            "current_digest": current,
+            "proof_id": proof_id,
+            "presentable": presentable,
+            **st,
+        }
+
     def run(self, agent: str, paths: Optional[Iterable] = None, declared_tools: str = "",
             capabilities: Optional[list] = None, send_contents: bool = False,
             redact_contents: bool = True, scope: str = "full", anchor: bool = False,
@@ -285,6 +408,14 @@ class AuditAPI:
             got = result.get("subject_digest")
             result["_subject_digest_verified"] = bool(expected and got and expected == got)
             result["_subject_digest_local"] = expected
+            ev = self.evidence_class(send_contents=bool(
+                payload.get("artifacts") if isinstance(payload, dict) else False))
+            issued = result.get("issued_at") or result.get("generated_at")
+            if not issued:
+                issued = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                result.setdefault("issued_at", issued)
+            result.setdefault("evidence_class", ev)
+            result.setdefault("expires_at", self.expires_at(issued, ev))
         return result
 
     def get_report(self, agent_id: str) -> dict:
