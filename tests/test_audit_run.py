@@ -175,6 +175,39 @@ def test_anchor_defaults_off(agent_dir):
     assert c.calls[0][1]["anchor"] is False
 
 
+def test_preview_is_local_and_not_a_certificate(agent_dir):
+    c = _FakeClient()
+    out = AuditAPI(c).preview(paths=[agent_dir], declared_tools="Bash, WebFetch")
+    assert c.calls == []
+    assert out["mode"] == "preview"
+    assert out["ai_generated"] is False
+    assert out["subject_digest"]
+    assert out["expires_at_would_be"].endswith("Z")
+    assert any(f["id"] == "CAP-BASH" for f in out["findings"])
+
+
+def test_status_refuses_foreign_proof_and_digest_drift(agent_dir):
+    c = _FakeClient()
+    api = AuditAPI(c)
+    digest = api.subject_digest(api.collect([agent_dir]))
+    issued = "2026-09-19T12:00:00Z"
+    exp = api.expires_at(issued, "declaration")
+    ok = api.status(agent_id="agent_aaa", certified_agent_id="agent_aaa",
+                    certified_digest=digest, issued_at=issued, expires_at=exp,
+                    paths=[agent_dir])
+    assert ok["presentable"] is True
+    foreign = api.status(agent_id="agent_bbb", certified_agent_id="agent_aaa",
+                         certified_digest=digest, issued_at=issued, expires_at=exp,
+                         paths=[agent_dir])
+    assert foreign["badge"] == "FOREIGN-PROOF"
+    (agent_dir / "my-agent.md").write_text(MANIFEST_MD + "\nrisky\n")
+    stale = api.status(agent_id="agent_aaa", certified_agent_id="agent_aaa",
+                       certified_digest=digest, issued_at=issued, expires_at=exp,
+                       paths=[agent_dir])
+    assert stale["badge"] == "STALE-AUDIT"
+    assert stale["presentable"] is False
+
+
 # ------------------------------------------------- anchor verification (network)
 
 SEPOLIA_ATT = {

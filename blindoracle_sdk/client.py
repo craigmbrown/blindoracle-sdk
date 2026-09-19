@@ -49,6 +49,7 @@ from blindoracle_sdk.attestation import AttestationAPI
 from blindoracle_sdk.marketplace import MarketplaceAPI
 from blindoracle_sdk.wallet import WalletAPI
 from blindoracle_sdk.proofs import ProofsAPI
+from blindoracle_sdk.kit import KitAPI
 from blindoracle_sdk.mcp import MCPAPI
 
 
@@ -137,6 +138,7 @@ class BlindOracleClient:
         self.marketplace = MarketplaceAPI(self)  # create/accept SKUs (v0.4)
         self.wallet = WalletAPI(self)  # free token preflight (v0.8)
         self.proofs = ProofsAPI(self)  # public settlement proofs (v0.10)
+        self.kit = KitAPI(self)  # agent kit docs, derived from the live manifest (v0.10)
         self.mcp = MCPAPI(self)  # SKUs over /v1/mcp (v0.10)
         self.attestation = AttestationAPI(self)  # Verified Introduction VI-001 (v0.3)
         self.registration = None  # set by BlindOracleClient.register()
@@ -360,6 +362,18 @@ class BlindOracleClient:
         return self._request("PATCH", path, body=body)
 
     # --- a2a marketplace gateway (v0.2 audit/privacy/metrics) ---
+    def fetch_text(self, url: str, timeout: int = 20) -> str:
+        """GET a public URL and return its body as text.
+
+        Used by :class:`~blindoracle_sdk.kit.KitAPI` to read kit markdown, which
+        is served from the website rather than the gateway. Public, unauthenticated
+        content only — no key is sent.
+        """
+        import urllib.request
+        req = urllib.request.Request(url, headers={"User-Agent": self.USER_AGENT})
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.read().decode("utf-8", "replace")
+
     def gw_get(self, path: str, params: dict = None) -> dict:
         return self._request("GET", path, params=params, base=self.gateway_base_url)
 
