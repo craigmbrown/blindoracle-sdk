@@ -7,7 +7,7 @@ every Bot you create or duplicate can use it.
 | field | value |
 |---|---|
 | Name | `blindoracle` |
-| URL | `https://api.craigmbrown.com/v1/mcp` |
+| URL | `https://api.craigmbrown.com/v1/mcp?src=grok_bot_kit` |
 | Transport | Streamable HTTP (JSON-RPC over POST) |
 | Header | `Authorization: Bearer <the api_key this Bot received at registration>` |
 
