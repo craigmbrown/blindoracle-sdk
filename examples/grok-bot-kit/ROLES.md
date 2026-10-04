@@ -1,6 +1,6 @@
 # BlindOracle fleet Bot — role pages (read the section for YOUR role)
 
-kit_version `2026.09.13` — if the `kit_version` you saved in your skill is older than the `min_kit_version` in `GET https://api.craigmbrown.com/v1/services` → `kit`, re-read https://craigmbrown.com/blindoracle/grok-bot-kit/BOOTSTRAP.md first.
+kit_version `2026.09.29` — if the `kit_version` you saved in your skill is older than the `min_kit_version` in `GET https://api.craigmbrown.com/v1/services` → `kit`, re-read https://craigmbrown.com/blindoracle/grok-bot-kit/BOOTSTRAP.md first.
 
 Your operator names your role in the one-line message that sent you to the bootstrap. Everything role-specific lives here so that message never needs more than the role word.
 
@@ -78,7 +78,7 @@ Your operator names your role in the one-line message that sent you to the boots
 - **Payout wallet:** skip Step 4 — this role only spends starter credit
 - **Daily task:** Run `ops_link-integrity` on the URL list below, then open each page in your browser and look for these RETIRED claims: Fedimint / ecash / sats pricing, prediction markets as a live product, 'requires an API key', a SKU count that is not the live `/v1/services` count, a 'free' badge on a priced SKU. Report ONE table: page · claim found · what the live API says. Never submit a form or edit anything — you report, the operator fixes.
 - **Managed by:** the `blindoracle` Bot. Your operator puts you and `blindoracle` in one group conversation; post your report there as well as via `/report`. `blindoracle` reads every managed Bot's post, keeps the fleet table, and relays operator instructions it receives in its own mailbox. It cannot approve spend for you.
-- **URL list:** https://craigmbrown.com/deepledger/ · https://craigmbrown.com/blindoracle/ · https://craigmbrown.com/blindoracle/index.md · https://craigmbrown.com/blindoracle/api/ · https://craigmbrown.com/blindoracle/how-it-works.html · https://craigmbrown.com/blindoracle/use-cases.html · https://api.craigmbrown.com/skill.md · https://glama.ai/mcp/servers/ivhvgjrxbj · https://lobehub.com/mcp/craigmbrown-blindoracle-docs · https://www.pulsemcp.com/servers/craigmbrown-blindoracle · https://mcp.so/server/blindoracle
+- **URL list:** https://craigmbrown.com/deepledger/ · https://craigmbrown.com/blindoracle/ · https://craigmbrown.com/blindoracle/index.md · https://craigmbrown.com/blindoracle/api/ · https://craigmbrown.com/blindoracle/how-it-works.html · https://craigmbrown.com/blindoracle/use-cases.html · https://api.craigmbrown.com/skill.md · https://glama.ai/mcp/servers/ivhvgjrxbj · https://lobehub.com/mcp/craigmbrown-blindoracle-docs · https://www.pulsemcp.com/servers/craigmbrown-blindoracle · https://mcp.so/servers/blindoracle-mcp
 - **Report:** two tiers — see `Reporting` in https://craigmbrown.com/blindoracle/grok-bot-kit/HEARTBEAT.md. Chat post = plain-language value, no ids. Threaded reply = findings with URL + date, both proof refs with their `https://api.craigmbrown.com/v1/proofs/settlement/<ref>` URLs, ids, and what you could not verify.
 
 ## role: `dispute-witness`
