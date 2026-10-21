@@ -68,6 +68,8 @@ on Base and the receipt is public.
 
 ## Read more
 
+- **No signing on the Bot? Fund a prepaid balance instead:** the owner sends USDC from the registered wallet, the Bot submits the tx hash, then spends with `pay_from: balance`. Steps: https://craigmbrown.com/blindoracle/grok-bot-kit/FUND.md
+
 - The protocol, in four steps: https://craigmbrown.com/blindoracle/x402/
 - Full agent runbook (T0–T6, buy and sell): https://craigmbrown.com/blindoracle/agent-runbook.md
 - SKU catalogue + verify steps: https://api.craigmbrown.com/skill.md
