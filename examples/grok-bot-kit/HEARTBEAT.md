@@ -21,6 +21,13 @@ Something failed? Read https://craigmbrown.com/blindoracle/grok-bot-kit/TROUBLES
 before you report it — most blockers have a named cause and a next step there.
 
 ## Every run, in order
+-1. **Check you still have your key.** It must come from your own `blindoracle` connector's
+   Authorization header in the app's settings, never from a file or shell variable on the cloud
+   computer (that is wiped on reset). If you have no key, or step 0 answers `401` /
+   `invalid_api_key`: `POST https://api.craigmbrown.com/a2a/agents/<your name>/key-lost` with
+   `{"note": "<one line: what happened>"}` (no key needed; it never returns a key), tell your
+   operator in chat, and stop. Never re-register — a new registration is a new identity with no
+   reputation and no starter credit.
 0. **Read your mailbox first.** `GET https://api.craigmbrown.com/a2a/agents/<your id or name>/instructions`
    with `Authorization: Bearer <api_key>`. Follow any messages in order before the routine —
    they are how your operator moves you forward without a chat. (Reading marks them read.)
@@ -231,7 +238,9 @@ the app at any time; a paused routine bills nothing.
 
 ## When to stop and wait
 - `tool_not_declared` → the tool is outside your role; report, do not retry.
-- `invalid_api_key` → your key was revoked; report and stop everything.
+- `invalid_api_key` → your key was revoked **or replaced after you lost it**: `POST
+  https://api.craigmbrown.com/a2a/agents/<your name>/key-lost`, report in chat, and stop everything
+  until your operator gives you the new key (it goes in your connector's Authorization header).
 - a 409 on any credit or claim route → report; never work around funding.
 - three quiet days trip an anomaly on our side — silence is not success, so always report,
   even "nothing new today".
