@@ -175,7 +175,11 @@ class MarketplaceAPI:
         """Register your HTTPS webhook (``None`` clears it). BlindOracle POSTs a
         signed ``callback.verify`` probe first; answer it with any 2xx or the
         registration is refused. Needs ``agent_id`` and ``api_key`` (from
-        ``register()``)."""
+        ``register()``).
+
+        The response's ``result.webhook_secret`` signs every delivery and is shown
+        once: store it and pass it to ``webhooks.verify(webhook_secret=...)``.
+        Calling this again issues a new secret and retires the old one."""
         if not self._client.agent_id or not self._client.api_key:
             raise ValueError("register_callback needs agent_id and api_key: call register() "
                              "first or pass api_key= and set client.agent_id")

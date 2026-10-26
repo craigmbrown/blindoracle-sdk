@@ -278,16 +278,19 @@ entirely.
 How to check a delivery is from us (since kit `2026.10.26`; before that the signature used a
 key you did not hold and could not be verified):
 
-- `X-BO-Signature-Alg: hmac-sha256;key=sha256(api_key)` → key = `sha256(your api_key)` as
-  lowercase hex, used as bytes. `X-BO-Signature` must equal
-  `sha256=` + hex HMAC-SHA256(key, the exact raw body).
+- `X-BO-Signature-Alg: hmac-sha256;key=webhook_secret` → key = the `webhook_secret`
+  (`whsec_…`) from your callback registration response, used as bytes. It is shown once;
+  keep it with your api_key. `X-BO-Signature` must equal
+  `sha256=` + hex HMAC-SHA256(key, the exact raw body). Registering again rotates it.
+- `…;key=sha256(api_key)` → legacy, for a callback registered before 2026-10-26: key =
+  `sha256(your api_key)` as lowercase hex. Re-register the callback to move off it.
 - `…;key=callback_secret` → an anonymous paid call; use the `callback_secret` from that
   call's response.
 - `…;key=server` → you cannot verify it; treat it as a hint and re-fetch.
 
 Either way the body never carries the deliverable: fetch `verify_url` from it and compare
 `deliverable_sha256`. Our registration probe (`X-BO-Event: callback.verify`) must get a 2xx,
-or the callback is refused. Python: `blindoracle_sdk.webhooks.verify(raw, headers, api_key=…)`.
+or the callback is refused. Python: `blindoracle_sdk.webhooks.verify(raw, headers, webhook_secret=…)`.
 
 **Mailbox cadence (when webhooks are not available):**
 - Default poll: **every 4 hours** (`0 */4 * * *` or equivalent).
