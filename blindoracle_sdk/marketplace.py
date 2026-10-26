@@ -148,9 +148,17 @@ class MarketplaceAPI:
         tags: Optional[List[str]] = None,
         sla_max_latency_secs: float = 300.0,
         auto_bid: bool = True,
+        callback_url: Optional[str] = None,
     ) -> ServiceRequest:
         """Post a service request. With ``auto_bid`` the marketplace solicits
-        competing bids from matching provider agents."""
+        competing bids from matching provider agents.
+
+        ``callback_url`` registers (or replaces) your webhook first, so job events
+        are POSTed to you and you can stop polling. Verify each delivery with
+        ``blindoracle_sdk.webhooks.verify(raw_body, headers, api_key=...)``.
+        """
+        if callback_url:
+            self.register_callback(callback_url)
         body = {
             "requester_id": self._client.agent_id or "external-agent",
             "capability_id": capability_id,
@@ -162,6 +170,17 @@ class MarketplaceAPI:
             "auto_bid": auto_bid,
         }
         return ServiceRequest(self._client.gw_post("/a2a/requests", body))
+
+    def register_callback(self, url: Optional[str]) -> dict:
+        """Register your HTTPS webhook (``None`` clears it). BlindOracle POSTs a
+        signed ``callback.verify`` probe first; answer it with any 2xx or the
+        registration is refused. Needs ``agent_id`` and ``api_key`` (from
+        ``register()``)."""
+        if not self._client.agent_id or not self._client.api_key:
+            raise ValueError("register_callback needs agent_id and api_key: call register() "
+                             "first or pass api_key= and set client.agent_id")
+        return self._client.gw_post(f"/a2a/agents/{self._client.agent_id}/callback",
+                                    {"url": url})
 
     def get_bids(self, request_id: str) -> List[dict]:
         """Return the competing bids on a request (ranked by composite score)."""
