@@ -64,3 +64,20 @@ def test_post_request_without_callback_is_unchanged():
 def test_register_callback_needs_identity():
     with pytest.raises(ValueError):
         MarketplaceAPI(_FakeClient(agent_id=None)).register_callback("https://me.dev/h")
+
+
+# RQ-BO-WEBHOOK-SECRET-01 ---------------------------------------------------------
+
+def test_webhook_secret_alg_verifies_with_the_secret_only():
+    h = {"X-BO-Signature": _sig(b"whsec_abc"), "X-BO-Signature-Alg": webhooks.ALG_WEBHOOK}
+    assert webhooks.verify(BODY, h, webhook_secret="whsec_abc")
+    assert not webhooks.verify(BODY, h, webhook_secret="whsec_other")
+    # the api_key / callback_secret paths never satisfy a webhook_secret delivery
+    assert not webhooks.verify(BODY, h, api_key="whsec_abc", callback_secret="whsec_abc")
+
+
+def test_legacy_alg_still_needs_the_api_key():
+    key = hashlib.sha256(b"k1").hexdigest().encode()
+    h = {"X-BO-Signature": _sig(key), "X-BO-Signature-Alg": webhooks.ALG_AGENT}
+    assert not webhooks.verify(BODY, h, webhook_secret=key.decode())
+    assert webhooks.verify(BODY, h, api_key="k1")

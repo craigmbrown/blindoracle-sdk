@@ -1,6 +1,6 @@
 """Verify BlindOracle webhook deliveries (post-and-walk-away).
 
-@REQ-ID: RQ-BO-CALLBACK-ADOPTION-01
+@REQ-ID: RQ-BO-CALLBACK-ADOPTION-01, RQ-BO-WEBHOOK-SECRET-01
 
 BlindOracle POSTs job events to your callback URL instead of making you poll.
 Every delivery carries:
@@ -12,8 +12,12 @@ Every delivery carries:
 
 Keys, by X-BO-Signature-Alg:
 
-    hmac-sha256;key=sha256(api_key)   you registered: key = sha256(your api_key) as
-                                      lowercase hex, used as utf-8 bytes
+    hmac-sha256;key=webhook_secret    you registered a callback: the ``webhook_secret``
+                                      (``whsec_...``) from that registration's response,
+                                      shown once; re-register to rotate it
+    hmac-sha256;key=sha256(api_key)   legacy, for callbacks registered before 2026-10-26:
+                                      key = sha256(your api_key) as lowercase hex, used
+                                      as utf-8 bytes. Re-register to move to webhook_secret
     hmac-sha256;key=callback_secret   anonymous paid call that sent callback_url: the
                                       callback_secret from that call's response
     hmac-sha256;key=server;...        you cannot verify this one; re-fetch verify_url
@@ -22,7 +26,8 @@ The body never carries the deliverable. Fetch ``verify_url`` from it and compare
 ``deliverable_sha256`` — that check needs no key at all.
 
     from blindoracle_sdk.webhooks import verify
-    ok = verify(raw_body, request.headers, api_key=os.environ["BLINDORACLE_API_KEY"])
+    ok = verify(raw_body, request.headers,
+                webhook_secret=os.environ["BLINDORACLE_WEBHOOK_SECRET"])
 """
 from __future__ import annotations
 
@@ -32,6 +37,7 @@ from typing import Mapping, Optional
 
 ALG_AGENT = "hmac-sha256;key=sha256(api_key)"
 ALG_JOB = "hmac-sha256;key=callback_secret"
+ALG_WEBHOOK = "hmac-sha256;key=webhook_secret"
 
 
 def _header(headers: Mapping[str, str], name: str) -> str:
@@ -42,18 +48,25 @@ def _header(headers: Mapping[str, str], name: str) -> str:
 
 
 def verify(raw_body: bytes, headers: Mapping[str, str], *,
-           api_key: Optional[str] = None, callback_secret: Optional[str] = None) -> bool:
+           api_key: Optional[str] = None, callback_secret: Optional[str] = None,
+           webhook_secret: Optional[str] = None) -> bool:
     """True when X-BO-Signature matches the key named by X-BO-Signature-Alg.
 
-    Pass ``api_key`` for a registered agent, ``callback_secret`` for an anonymous
-    paid call. Returns False for a server-signed delivery (unverifiable by design)
-    or when the needed key was not supplied.
+    Pass ``webhook_secret`` for a registered callback, ``callback_secret`` for an
+    anonymous paid call, or ``api_key`` for a callback registered before
+    webhook_secret existed. Returns False for a server-signed delivery
+    (unverifiable by design) or when the needed key was not supplied.
     """
     sig = _header(headers, "X-BO-Signature")
     alg = _header(headers, "X-BO-Signature-Alg")
     if not sig.startswith("sha256="):
         return False
-    if alg == ALG_AGENT and api_key:
+    if alg == ALG_WEBHOOK and webhook_secret:
+        key = webhook_secret.encode()
+    elif alg == ALG_AGENT and api_key:
+        # Legacy alg: the server derives this key from its stored api_key hash.
+        # api_key is a random bearer token, not a password, so a slow hash adds
+        # nothing here; the alg is retired by re-registering (RQ-BO-WEBHOOK-SECRET-01).
         key = hashlib.sha256(api_key.encode()).hexdigest().encode()
     elif alg == ALG_JOB and callback_secret:
         key = callback_secret.encode()
