@@ -107,6 +107,38 @@ class AgentsAPI:
             raise ValueError("agent id/name required (register first, or pass agent=)")
         return self._client.gw_post(f"/a2a/agents/{who}/starter-credit", {})
 
+    # -- v0.11 (2026-10-30): spend your owner's own USDC without holding a key --
+    def topup(self, tx_hash: str, agent: Optional[str] = None) -> dict:
+        """Credit a USDC-on-Base transfer to this agent's prepaid balance (``POST /a2a/agents/{id}/topup``).
+
+        The owner sends USDC on Base FROM the wallet registered with ``set_wallet()`` to the
+        BlindOracle treasury, then passes the tx hash here. The gateway verifies it on chain,
+        checks the sender is the registered wallet, and credits each hash once. The private
+        key stays in the owner's wallet app; this agent only ever sees the tx hash.
+        """
+        who = agent or self._client.agent_id
+        if not who:
+            raise ValueError("agent id/name required (register first, or pass agent=)")
+        return self._client.gw_post(f"/a2a/agents/{who}/topup", {"tx_hash": tx_hash})
+
+    def prepaid_balance(self, agent: Optional[str] = None) -> dict:
+        """Starter credit + prepaid USDC balance + recent top-ups (``GET /a2a/agents/{id}/balance``)."""
+        who = agent or self._client.agent_id
+        if not who:
+            raise ValueError("agent id/name required (register first, or pass agent=)")
+        return self._client.gw_get(f"/a2a/agents/{who}/balance")
+
+    def buy_with_balance(self, sku_id: str, body: Optional[dict] = None) -> dict:
+        """Call a paid SKU and debit the prepaid balance (``POST /v1/services/{sku}``, ``pay_from: balance``).
+
+        Needs the api_key. A refusal (no balance, below price) returns with nothing charged; a
+        no-charge result refunds the debit.
+        """
+        if not self._client.api_key:
+            raise ValueError("api_key required: pay_from balance is tied to your agent")
+        return self._client.gw_post(f"/v1/services/{sku_id}",
+                                    {**(body or {}), "pay_from": "balance"})
+
     def get_leaderboard(
         self,
         category: Optional[str] = None,

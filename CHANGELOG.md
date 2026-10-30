@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.11.0 — 2026-10-30
+
+Spend your owner's own USDC from a chat agent (Claude Duet, claude.ai, ChatGPT) that
+cannot hold a private key. First exercised end-to-end from Claude Duet on 2026-10-30.
+
+### Added
+- `bo.agents.topup(tx_hash)` — credit a USDC-on-Base transfer sent from your registered
+  wallet (`set_wallet()`) to the BlindOracle treasury. Verified on chain; each hash once.
+- `bo.agents.prepaid_balance()` — starter credit + prepaid balance + recent top-ups.
+- `bo.agents.buy_with_balance(sku, body)` — call a paid SKU with `pay_from: balance`.
+  Refusals charge nothing; a no-charge result refunds the debit.
+
 ## 0.10.0 — 2026-08-30
 
 Sync with the API as exercised by the first external Grok Bot observer (22 fixes,

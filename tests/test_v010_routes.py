@@ -91,7 +91,7 @@ def test_proofs(bo):
     assert len(c.proofs.verify_recipe()) == 3
 
 
-def test_version_is_0_10():
+def test_version_is_0_11():
     """pyproject and the source-tree fallback agree on 0.10 (the installed
     metadata may lag on a dev box; test_version_consistency covers that link)."""
     import re
@@ -99,4 +99,34 @@ def test_version_is_0_10():
     from blindoracle_sdk import _version
     root = Path(__file__).resolve().parent.parent
     py = re.search(r'^version = "([^"]+)"', (root / "pyproject.toml").read_text(), re.M).group(1)
-    assert py == _version._FALLBACK and py.startswith("0.10")
+    assert py == _version._FALLBACK and py.startswith("0.11")
+
+
+def test_topup_posts_tx_hash_to_agent(bo):
+    c, cap = bo
+    c.agents.topup("0xabc")
+    assert cap.calls[-1]["method"] == "POST"
+    assert cap.calls[-1]["path"] == "/a2a/agents/grok-scout-01/topup"
+    assert cap.calls[-1]["body"] == {"tx_hash": "0xabc"}
+
+
+def test_prepaid_balance_reads_agent_balance(bo):
+    c, cap = bo
+    c.agents.prepaid_balance()
+    assert cap.calls[-1]["method"] == "GET"
+    assert cap.calls[-1]["path"] == "/a2a/agents/grok-scout-01/balance"
+
+
+def test_buy_with_balance_sets_pay_from(bo):
+    c, cap = bo
+    c.agents.buy_with_balance("ops.link-integrity", {"prompt": "Check https://x"})
+    call = cap.calls[-1]
+    assert call["path"] == "/v1/services/ops.link-integrity"
+    assert call["body"] == {"prompt": "Check https://x", "pay_from": "balance"}
+
+
+def test_buy_with_balance_requires_api_key():
+    c = BlindOracleClient()
+    c.api_key = None
+    with pytest.raises(ValueError):
+        c.agents.buy_with_balance("ops.link-integrity")
