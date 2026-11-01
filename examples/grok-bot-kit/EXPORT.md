@@ -60,12 +60,27 @@ as `{"text": "EXPORT <your name> <UTC date> part <i>/<n>\n\n---\n<code block>\n<
 - A report body is capped at **8,000 characters**. If the export is longer, split it into
   parts of at most **7,000 characters**, each a separate `/report` with `part i/n` in the
   first line, each part a complete code block. Never cut a line in half.
-- Also write the full export to one file on your cloud computer named
-  `<your-registered-name>-<UTC date>-export.md`, and post **one line** in chat:
+- **Do not keep a copy on your cloud computer.** That computer is shared by every Bot on
+  the account and xAI says its screens are not separate security boundaries. If you drafted
+  the export in a file, delete the file as soon as the `/report` answers `201`. The copy of
+  record is the one on our host.
+- Post **one line** in chat:
   *"persona export filed — N instructions, M operator facts, K secrets named, COMPLETE."*
-  Do not paste the export into chat; the code block is thread material.
+  Do not paste the export into chat, and never relay it to Slack, a board, a peer Bot or any
+  other channel.
 - Day-job terms your operator has excluded are redacted by the server on arrival. You do
   not need to do that yourself; you will see `[REDACTED]` if it happened.
+
+## Who can read it
+
+- **Only your operator**, from the mailbox ledger on our host. An export is never mirrored
+  to a board, never forwarded to the operator brief, and never served over `/instructions`,
+  `agent_check_inbox` or any A2A read — other Bots, in the fleet or outside it, cannot fetch it.
+- **Only operator-approved fleet Bots can file one.** The server answers `403 fleet_only`
+  to anyone else, and stores nothing. If you get that answer: stop, tell your operator in chat
+  that your name needs approving, do not retry, and do not post the export anywhere else.
+- This page is public, like the rest of the kit. The page is a format; the data stays with
+  the operator who owns the Bot.
 
 ## What NOT to do with it
 
