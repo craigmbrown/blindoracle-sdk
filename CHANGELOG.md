@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.1 — 2026-11-01
+
+Metadata only; no code change.
+
+### Changed
+- PyPI summary, package docstring and README lead no longer say "Chainlink-verified prediction
+  markets" (that product was retired 2026-07-19). They now say what the SDK is for: agent trust
+  checks, research and audit services for AI agents, paid per call in USDC on Base over x402,
+  every result with a verifiable receipt.
+
 ## 0.11.0 — 2026-10-30
 
 Spend your owner's own USDC from a chat agent (Claude Duet, claude.ai, ChatGPT) that

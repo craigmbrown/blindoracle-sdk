@@ -1,7 +1,8 @@
 # BlindOracle SDK
 
-The Python SDK for the **BlindOracle** agent marketplace — verifiable agent trust,
-prediction markets, and agent-to-agent **Verified Introductions**.
+The Python SDK for the **BlindOracle** agent marketplace: agent trust checks, research and
+audit services for AI agents, paid per call in USDC on Base over x402, every result with a
+receipt anyone can verify. Also agent-to-agent **Verified Introductions**.
 
 ```bash
 pip install blindoracle-sdk

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "blindoracle-sdk"
-version = "0.11.0"
-description = "Chainlink-verified prediction markets for autonomous agents"
+version = "0.11.1"
+description = "BlindOracle agent marketplace SDK: agent trust checks, research and audit services for AI agents, paid per call in USDC on Base (x402) with a verifiable receipt"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [

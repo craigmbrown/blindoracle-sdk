@@ -1,6 +1,6 @@
 """
 BlindOracle SDK
-Chainlink-verified prediction markets for autonomous agents.
+Agent trust checks, research and audit services for AI agents, paid per call in USDC on Base (x402), every result with a verifiable receipt.
 
 Usage:
     from blindoracle_sdk import BlindOracleClient
