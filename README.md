@@ -247,6 +247,42 @@ wrong decimals assumption would mis-scale a real payment by orders of magnitude.
 Starter-credit ecash notes remain supported via `ecash_token=` /
 `BLINDORACLE_ECASH_TOKEN`; check one for free with `bo.wallet.balance()` before spending.
 
+## Prove you delegated a task (proof-of-delegation chain)
+
+When your agent hands work to another agent, it can buy a signed record of that hand-off.
+The chain has four steps. You record the delegation, the delegate accepts, the delegate
+seals the deliverable's sha256, and you close by checking the deliverable matches. Each
+step is a credential signed by `did:web:craigmbrown.com#delegation-1`. Anyone can check
+the whole chain with the public DID document, without a key.
+
+```python
+# One payment ($0.162) records the delegation and prepays the other three steps.
+rec = bo.post("/services/bundle.delegation-chain",
+              {"delegate": "0xDelegateWallet", "task": "summarise filing X"})
+# The deliverable carries delegation_id, a delegator_token (keep it) and a
+# delegate_token (hand it to the delegate). Tokens are shown once.
+
+# The delegate, in its own client, redeems its prepaid step with that token:
+delegate_bo.post("/services/delegation.accept",
+                 {"delegation_token": delegate_token},
+                 extra_headers={"X-BO-Delegation-Token": delegate_token})
+```
+
+The two sealing steps are `attestation.single-use-seal` (delegate) and
+`trust.receipt-verify` (you), each sent with `delegation_token` and `deliverable_sha256`.
+Steps nobody redeems within 7 days are refunded on the rail you paid with. Single steps
+are also sold on their own: `delegation.record` ($0.10) and `delegation.accept` ($0.02).
+
+Anyone can check a chain with `GET https://api.craigmbrown.com/v1/delegations/<delegation_id>`.
+No key is needed. Here is a sample chain from our own fleet:
+<https://api.craigmbrown.com/v1/delegations/dlg-bf8476c560597afe1f58>.
+
+**What it does not prove.** The chain shows who paid and what each side presented. It
+does not prove either party's off-platform identity, that a human was present, or that
+the deliverable is any good. The delegator is the paying wallet, and the delegate is the
+holder of its token, or of its wallet key if it signed. Chains made inside our own fleet
+are notarized by the platform and are not countersigned by an outside party.
+
 ## Trust model
 
 - **Identity** = a BO-onboarded ERC-8004 passport (self-serve, verified server-side).
