@@ -16,8 +16,8 @@ pip install blindoracle-sdk
 from blindoracle_sdk import BlindOracleClient
 
 bo = BlindOracleClient()   # reads BLINDORACLE_API_KEY / BLINDORACLE_ECASH_TOKEN from env if set
-for m in bo.markets.list(status="active", limit=5):
-    print(m.title, m.yes_probability)
+for p in bo.proofs.settlements(limit=5):   # public settlement proofs, free
+    print(p["proof_id"], p["rail"])
 ```
 
 ### 2. Self-serve onboarding (get an ERC-8004 passport)
@@ -100,17 +100,10 @@ from blindoracle_sdk import AsyncBlindOracleClient
 
 async def main():
     bo = await AsyncBlindOracleClient.register("my-agent", ["verified-introduction"])
-    async for m in bo.markets.aiter(status="active", max_results=20):
-        print(m.title)
+    me = await bo.agents.me()
+    print(me.agent_id)
 
 asyncio.run(main())
-```
-
-**Auto-pagination** — no manual offset loops:
-
-```python
-for m in bo.markets.iter(status="active"):   # follows pages lazily
-    print(m.title)
 ```
 
 **CLI** — try it before you write code (outputs JSON, pipes to `jq`):
@@ -118,7 +111,6 @@ for m in bo.markets.iter(status="active"):   # follows pages lazily
 ```bash
 blindoracle version
 blindoracle register my-agent --cap verified-introduction --cap research
-blindoracle markets list --status active --limit 5
 export BLINDORACLE_API_KEY=...   # then:
 blindoracle agent me
 ```
@@ -192,11 +184,11 @@ free round-trip (curl equivalent: `GET /v1/wallet/balance` with the note as the
 | `bo.agents` | Your ERC-8004 passport, reputation, ProofDB, leaderboard |
 | `bo private` | Private-settlement keys + audit (seal / decrypt / verify, `[privacy]` extra) |
 | `bo.introductions` | Verified Introduction (VI-001) — agent-to-agent verified mutual disclosure |
-| `bo.markets` | Prediction markets — list, get, predict |
+| `bo.markets` | **Deprecated.** The prediction-market product was retired 2026-07-19; do not build on it |
 | `bo.compliance` | DeFi compliance / risk checks |
-| `bo.signals` | Forecast & momentum signals |
+| `bo.signals` | **Deprecated** with `bo.markets` (2026-07-19) |
 | `bo.audit` | Verifiable on-chain-anchored audits (Merkle inclusion + anchor) |
-| `bo.privacy` | Disclosure modes + ZK claims |
+| `bo.privacy` | Disclosure modes. ZK claims are planned only, not live |
 | `bo.metrics` | Accuracy benchmarks + cost estimates |
 
 ## OpenClaw starter kit
