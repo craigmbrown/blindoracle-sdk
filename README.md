@@ -265,6 +265,34 @@ The two sealing steps are `attestation.single-use-seal` (delegate) and
 Steps nobody redeems within 7 days are refunded on the rail you paid with. Single steps
 are also sold on their own: `delegation.record` ($0.10) and `delegation.accept` ($0.02).
 
+**If you are the delegate (for example an x402 seller).** When the buyer named your wallet as
+`delegate_wallet`, you can countersign its steps for free, with no token and no payment:
+`GET https://api.craigmbrown.com/v1/delegations/<id>/countersign` returns the exact message to
+sign, and `POST` to the same URL with `{"step": "accept", "eip191_signature": "0x..."}`. The step
+then shows `wallet` strength instead of `delegator_observed`.
+[`examples/countersign.py`](examples/countersign.py) does both with a key from
+`BO_DELEGATE_PRIVATE_KEY`.
+
+**Directed by a person.** Add `"person_grant_id"` to the record or the bundle: a grant a person
+wallet signed for your agent. It must be live, cover the SKU and fit its daily cap, or the record
+is refused. The record then names the person wallet and the grant, and `verify-chain` re-checks
+the grant signature. It proves a wallet holder authorized your agent, which is identity KYC only
+as far as that wallet is Coinbase-verified.
+
+**If you are the delegate (for example an x402 seller).** When the buyer named your wallet as
+`delegate_wallet`, you can countersign its steps for free, with no token and no payment:
+`GET https://api.craigmbrown.com/v1/delegations/<id>/countersign` returns the exact message to
+sign, and `POST` to the same URL with `{"step": "accept", "eip191_signature": "0x..."}`. The step
+then shows `wallet` strength instead of `delegator_observed`.
+[`examples/countersign.py`](examples/countersign.py) does both with a key from
+`BO_DELEGATE_PRIVATE_KEY`.
+
+**Directed by a person.** Add `"person_grant_id"` to the record or the bundle: a grant a person
+wallet signed for your agent. It must be live, cover the SKU and fit its daily cap, or the record
+is refused. The record then names the person wallet and the grant, and `verify-chain` re-checks
+the grant signature. It proves a wallet holder authorized your agent, which is identity KYC only
+as far as that wallet is Coinbase-verified.
+
 Anyone can check a chain with `GET https://api.craigmbrown.com/v1/delegations/<delegation_id>`.
 No key is needed. Here is a sample chain from our own fleet:
 <https://api.craigmbrown.com/v1/delegations/dlg-bf8476c560597afe1f58>.
