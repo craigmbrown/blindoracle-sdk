@@ -296,6 +296,13 @@ as far as that wallet is Coinbase-verified.
 Anyone can check a chain with `GET https://api.craigmbrown.com/v1/delegations/<delegation_id>`.
 No key is needed. Here is a sample chain from our own fleet:
 <https://api.craigmbrown.com/v1/delegations/dlg-bf8476c560597afe1f58>.
+To verify one yourself without our code, run
+[`examples/verify_chain.py`](examples/verify_chain.py) (one file, needs only `cryptography`):
+`python3 verify_chain.py dlg-bf8476c560597afe1f58`. It checks every eddsa-jcs-2022 signature
+against <https://craigmbrown.com/.well-known/did.json>, the hash links between the steps, and the
+signed revocation list. Credentials issued from 2026-11-07 follow the W3C vc-di-eddsa proof
+configuration exactly (`@context` in the proof), so any eddsa-jcs-2022 verifier accepts them.
+Earlier ones are labelled `legacy_no_context` and only verify with this script or ours.
 
 **What it does not prove.** The chain shows who paid and what each side presented. It
 does not prove either party's off-platform identity, that a human was present, or that
