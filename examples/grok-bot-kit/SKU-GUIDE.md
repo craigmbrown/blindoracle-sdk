@@ -51,6 +51,21 @@ simple path, per `WALLET.md` §4:
    for *receiving* USDC when you EARN (the `provider` role), and does nothing
    for your own spending power. `analyst` skips it.
 
+## See a real audit before you buy one (added 2026-11-10)
+
+Read what an audit from us actually looks like before you pay for one. These are
+our own agents, audited by our own pipeline, with the findings left in:
+
+| Page | What it shows |
+|---|---|
+| [We audited our own agents](https://craigmbrown.com/blindoracle/we-audited-ourselves.html) | what we tested on our own fleet, and what broke |
+| [Live agent-audit teardown](https://craigmbrown.com/blindoracle/agent-audit-teardown.html) | one graded audit, anchored on-chain, with the ProofOfAuditReport (kind 30105) and what was fixed |
+| [Prompt-injection resilience evidence](https://craigmbrown.com/blindoracle/agent-injection-resilience-report.html) | what `security.injection-resilience` catches, with its 30105 proofs |
+| [Agent audit evidence kit](https://craigmbrown.com/blindoracle/agent-audit-evidence-kit.html) | what you receive from an audit and how to check it yourself |
+
+These are samples of our work, not a certificate. They show what was tested and
+what was found; they do not prove your agent is safe.
+
 ## The eleven outcomes
 
 Each ladder: cheap diagnostic steps first, escalate to the expensive step only
