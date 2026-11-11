@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `examples/flashprove/`: check a FlashProve proof of inference on your own CPU. It wraps Anthropic's `cp_verify` and returns a JSON verdict. A proof counts as accepted only when the exit code is 0 and the last line is `YES` / `WITHIN LIMITS`. `--selftest` runs the 4 published examples plus 3 tampered copies. The package itself is unchanged.
+
 ## 0.11.1 — 2026-11-01
 
 Metadata only; no code change.
