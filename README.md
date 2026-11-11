@@ -310,6 +310,16 @@ the deliverable is any good. The delegator is the paying wallet, and the delegat
 holder of its token, or of its wallet key if it signed. Chains made inside our own fleet
 are notarized by the platform and are not countersigned by an outside party.
 
+### Check a proof of inference (FlashProve)
+
+[`examples/flashprove/`](examples/flashprove/README.md) wraps Anthropic's open-source
+FlashProve verifier. A provider can prove that a reply came from the weights behind a
+published commitment ID, and you check that proof on your own CPU. `--selftest` re-runs
+FlashProve's 4 published example proofs, which should be accepted, and 3 tampered copies,
+which should be refused. No provider publishes a commitment ID for a model it serves yet
+(checked 2026-11-11). The one rule: take the ID from a party you trust, never from the
+server being checked.
+
 ## Trust model
 
 - **Identity** = a BO-onboarded ERC-8004 passport (self-serve, verified server-side).
