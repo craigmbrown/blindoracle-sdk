@@ -32,9 +32,18 @@ Two proof-configuration forms are accepted, and each link is labelled:
 A proof that carries @context is checked in the spec form only, so a new credential
 cannot be downgraded to the legacy check.
 
-Not checked here (the full verifier in the TB repo does these): a person grant embedded
-as credentialSubject.directedBy, delegate-wallet EIP-191 / ERC-1271 signatures, and the
-on-chain key-anchor fallback for when craigmbrown.com is unreachable.
+Person link (reported, partly checked): a record may embed the person grant that authorized
+its delegator (credentialSubject.authorizedBy; records before 2026-11-17 used the key
+directedBy for the same thing), and an AgentDelegationDirection link may carry that person's
+signature over this delegation id + task hash. `person_link` is "directed", "authorized" or
+"none". Checked here with the stdlib: the grant text hashes to grantSha256 and names the
+delegator, and the direction's signed text is the exact expected message for this record.
+NOT checked here: the wallet signatures themselves (EIP-191 recovery needs secp256k1; smart
+wallets need a Base RPC), so the result says `wallet_signatures_rechecked: false`.
+
+Not checked here (the full verifier in the TB repo does these): delegate-wallet and person-wallet
+EIP-191 / ERC-1271 signatures, and the on-chain key-anchor fallback for when craigmbrown.com is
+unreachable.
 
 Exit status: 0 verified, 1 not verified, 2 could not run.
 """
@@ -56,6 +65,7 @@ UA = "blindoracle-verify-chain/1.0"
 CORE = ["AgentDelegationRecord", "AgentDelegationAcceptance", "AgentDeliverySeal",
         "AgentDelegationClosure"]
 COUNTERSIGN = "AgentDelegationCountersignature"
+DIRECTION = "AgentDelegationDirection"
 LEGACY_FIELDS = ("type", "cryptosuite", "proofPurpose", "verificationMethod", "created")
 _B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
@@ -192,6 +202,8 @@ def verify_chain(vcs: list, did_doc: dict, status_doc=None) -> dict:
             tgt = seen.get((subj.get("countersigns") or {}).get("sha256") or "")
             if tgt is None or kind(tgt) not in CORE[1:3]:
                 problems.append(f"{t}: countersigns no earlier accept or deliver link")
+        elif t == DIRECTION:
+            pass  # reported by person_link() below
         elif core_i < len(CORE) and t == CORE[core_i]:
             core_i += 1
         else:
@@ -217,9 +229,58 @@ def verify_chain(vcs: list, did_doc: dict, status_doc=None) -> dict:
             problems.append(f"record {status}")
     stage = CORE[core_i - 1] if core_i else None
     closure = (walked[-1].get("credentialSubject") or {}) if kind(walked[-1]) == CORE[-1] else {}
+    pl = person_link(records[0], [v for v in walked if kind(v) == DIRECTION])
+    problems.extend(pl.pop("problems"))
     return {"ok": not problems, "problems": problems, "delegation_id": next(iter(ids)) if len(ids) == 1 else None,
             "stage": stage, "links": links, "status": status,
-            "receipt_matches": closure.get("deliverableMatches") if closure else None}
+            "receipt_matches": closure.get("deliverableMatches") if closure else None, **pl}
+
+
+def person_link(record: dict, directions: list) -> dict:
+    """What the chain says about the person behind the delegator, and what was checked here."""
+    rs = record.get("credentialSubject") or {}
+    key = "authorizedBy" if isinstance(rs.get("authorizedBy"), dict) else "directedBy"
+    g = rs.get(key) if isinstance(rs.get(key), dict) else None
+    out = {"person_link": "none", "authorized_by": None, "directed_by": None,
+           "wallet_signatures_rechecked": False, "problems": []}
+    if g is None:
+        if directions:
+            out["problems"].append(f"{DIRECTION}: the record embeds no person grant")
+        return out
+    msg = g.get("grantMessage") or ""
+    gp = []
+    if hashlib.sha256(msg.encode("utf-8")).hexdigest() != g.get("grantSha256"):
+        gp.append("grantSha256 does not match grantMessage")
+    name = (g.get("agent") or {}).get("name")
+    if name and f"Agent: {name} (" not in msg:
+        gp.append("grant text does not name this agent")
+    wallet = g.get("personWallet") or ""
+    if f"Person wallet: {wallet}\n" not in msg:
+        gp.append("grant text names a different person wallet")
+    out["problems"].extend(f"{key}: {p}" for p in gp)
+    out["authorized_by"] = {"person_wallet": wallet, "grant_id": g.get("personGrantId"), "agent": name,
+                            "recorded_as": key, "text_checks": "fail" if gp else "pass",
+                            "means": "a standing grant authorized the agent; not the person's approval of this job"}
+    out["person_link"] = "authorized"
+    if len(directions) > 1:
+        out["problems"].append(f"{DIRECTION}: more than one direction link")
+    if directions:
+        s = directions[0].get("credentialSubject") or {}
+        expected = (f"BlindOracle job direction\n{rs.get('delegationId')}\n{rs.get('taskSha256')}\n{wallet}\n"
+                    "I am the person behind the delegator and I direct this job.")
+        dp = []
+        if str(s.get("personWallet") or "").lower() != wallet.lower():
+            dp.append("signer is not the grant's person wallet")
+        if s.get("signedMessage") != expected:
+            dp.append("signed text is not the expected direction message for this record")
+        if (s.get("directs") or {}).get("sha256") != hashlib.sha256(jcs(record)).hexdigest():
+            dp.append("the direction does not name this record")
+        out["problems"].extend(f"{DIRECTION}: {p}" for p in dp)
+        out["directed_by"] = {"person_wallet": s.get("personWallet"), "signed_at": directions[0].get("validFrom"),
+                              "signature_method": s.get("signatureMethod"), "text_checks": "fail" if dp else "pass"}
+        if not dp and not gp:
+            out["person_link"] = "directed"
+    return out
 
 
 def verify_one(vc: dict, did_doc: dict, status_doc=None) -> dict:
