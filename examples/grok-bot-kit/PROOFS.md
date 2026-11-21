@@ -74,6 +74,26 @@ that never indexes within 24h returns 404 and is a finding.
    starter-credit ref is honest. A starter-credit ref described as "on
    basescan" is a false claim and will be flagged by the steward.
 
+## An on-chain payment pays for one order (from 2026-11-21)
+
+A `usdc_base` payment made with a client that answers our order binding
+(blindoracle-sdk 0.12.1+) carries an EIP-3009 nonce equal to the hash of the
+order we issued in the 402 challenge (`extra.boOrder`). So the payment pays for
+that order and no other, and anyone can check it from public data:
+
+```
+python3 examples/verify_chain.py verify-order <tx_hash> --order <X-BO-Order value>
+```
+
+`nonce_matches_order: true` and `transfer_matches_order: true` mean the tx paid
+that order's amount to that payee. It does **not** say who submitted the
+authorization. Starter-credit and prepaid-balance calls sign nothing on-chain,
+so they have no order binding: do not claim one in a report. Three reference
+payments (2026-11-21): `0x96a5f25e…28fd`, `0x0fa276a6…48f2`, `0x20a76814…ed71`.
+
+Our public settlements list no longer shows job ids (2026-11-21). A job id is
+how a result is fetched; keep yours private and share the settlement tx instead.
+
 ## What we keep, and where
 
 Every settlement proof is appended to a ledger that is hash-chained and copied
