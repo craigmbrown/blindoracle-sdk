@@ -463,6 +463,26 @@ def main_verify_order(argv) -> int:
     return 0 if res["ok"] else 1
 
 
+def check_anchors(anchors, vcs: list, rpc: str = BASE_RPC) -> list:
+    """Re-check each on-chain anchor a chain view lists: the transaction's input on Base must be
+    the sha256 of the JCS form of credential number `covers_links` (the hash the next link would
+    carry as previous.sha256, so it commits to every link up to that one). Needs a Base RPC."""
+    out = []
+    for a in anchors or []:
+        row = {"tx_hash": a.get("tx_hash"), "covers_links": a.get("covers_links"),
+               "covers_whole_chain": a.get("covers_links") == len(vcs)}
+        try:
+            n = int(a.get("covers_links"))
+            want = hashlib.sha256(jcs(vcs[n - 1])).hexdigest()
+            tx = _rpc(rpc, "eth_getTransactionByHash", [a.get("tx_hash")])
+            row.update(matches=(tx or {}).get("input") == "0x" + want, digest_sha256=want,
+                       block=int(tx["blockNumber"], 16) if tx and tx.get("blockNumber") else None)
+        except Exception as e:  # noqa: BLE001
+            row.update(matches=None, why=f"could not check: {type(e).__name__}")
+        out.append(row)
+    return out
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
     if argv and argv[0] == "verify-order":
@@ -474,6 +494,8 @@ def main(argv=None) -> int:
     ap.add_argument("--status", help="delegation-status.json file instead of fetching it")
     ap.add_argument("--no-status", action="store_true", help="skip the revocation check")
     ap.add_argument("--api", default=API)
+    ap.add_argument("--rpc", default=BASE_RPC, help="Base RPC used to re-check on-chain anchors")
+    ap.add_argument("--no-anchors", action="store_true", help="skip the on-chain anchor check")
     a = ap.parse_args(argv)
     try:
         if a.src.startswith("dlg-"):
@@ -494,6 +516,11 @@ def main(argv=None) -> int:
         res = verify_one(data, did_doc, status_doc)  # a single credential (grant, attestation, ...)
     else:
         res = verify_chain(vcs or [], did_doc, status_doc)
+        if isinstance(data, dict) and data.get("anchors") and not a.no_anchors:
+            res["anchors"] = check_anchors(data["anchors"], vcs or [], a.rpc)
+            if any(x.get("matches") is False for x in res["anchors"]):
+                res["ok"] = False
+                res.setdefault("problems", []).append("an on-chain anchor does not match the credential it names")
     print(json.dumps(res, indent=2))
     return 0 if res["ok"] else 1
 
