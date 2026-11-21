@@ -39,6 +39,7 @@ from blindoracle_sdk.private_settlement import generate_auditor_key, seal as sea
 from blindoracle_sdk.metrics import MetricsAPI
 from blindoracle_sdk.proofs import ProofsAPI
 from blindoracle_sdk.kit import KitAPI, KIT_BASE
+from blindoracle_sdk.inbox import InboxAPI
 from blindoracle_sdk.mcp import MCPAPI, tool_name_for
 from blindoracle_sdk.delegation import (
     DelegationLog,
