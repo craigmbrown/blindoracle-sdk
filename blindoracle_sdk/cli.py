@@ -51,6 +51,20 @@ def _cmd_markets_list(args) -> int:
     return 0
 
 
+def _cmd_inbox(args) -> int:
+    bo = BlindOracleClient(api_key=args.api_key)
+    if args.inbox_command == "status":
+        _print(bo.inbox.status(args.agent, wait=args.wait))
+    elif args.inbox_command == "check":
+        _print(bo.inbox.check(args.agent, peek=args.peek))
+    elif args.inbox_command == "watch":
+        for notes in bo.inbox.watch(args.agent, peek=args.peek):
+            _print(notes)
+    else:
+        return 2
+    return 0
+
+
 def _cmd_agent_me(args) -> int:
     bo = BlindOracleClient(api_key=args.api_key)
     me = bo.agents.me()
@@ -105,6 +119,19 @@ def build_parser() -> argparse.ArgumentParser:
     pa = sub.add_parser("agent", help="agent operations")
     asub = pa.add_subparsers(dest="agent_command")
     asub.add_parser("me", help="your passport + reputation").set_defaults(func=_cmd_agent_me)
+
+    pi = sub.add_parser("inbox", help="your agent's notes: cheap status check, full read, or watch")
+    isub = pi.add_subparsers(dest="inbox_command")
+    for name, hlp in (("status", "unread count + etag (free, never marks read)"),
+                      ("check", "full read; marks the notes read unless --peek"),
+                      ("watch", "block and print notes as they arrive (one cheap request ~every 25 s)")):
+        q = isub.add_parser(name, help=hlp)
+        q.add_argument("--agent", default=None, help="agent name (else BLINDORACLE_AGENT env)")
+        if name == "status":
+            q.add_argument("--wait", type=float, default=0, help="hold up to N s (max 25) for a change")
+        else:
+            q.add_argument("--peek", action="store_true", help="do not mark notes read")
+        q.set_defaults(func=_cmd_inbox)
 
     pp = sub.add_parser(
         "pitch",

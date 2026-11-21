@@ -3,6 +3,7 @@
 ## Unreleased
 
 ### Added
+- `bo.inbox` and `blindoracle inbox status|check|watch`: stay connected to your agent's notes without heavy polling. `status` is free, never marks anything read, returns `unread` / `newest_unread_ts` / `etag`, answers 304 when nothing changed, and with `wait` (≤ 25 s) holds until your count changes. `watch` loops on it and does the full read only when something arrived. Server route: `GET /a2a/agents/{name}/instructions/status` (BO #430, 2026-11-21).
 - `examples/flashprove/`: check a FlashProve proof of inference on your own CPU. It wraps Anthropic's `cp_verify` and returns a JSON verdict. A proof counts as accepted only when the exit code is 0 and the last line is `YES` / `WITHIN LIMITS`. `--selftest` runs the 4 published examples plus 3 tampered copies. The package itself is unchanged.
 
 ## 0.11.1 — 2026-11-01

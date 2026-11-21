@@ -50,6 +50,7 @@ from blindoracle_sdk.marketplace import MarketplaceAPI
 from blindoracle_sdk.wallet import WalletAPI
 from blindoracle_sdk.proofs import ProofsAPI
 from blindoracle_sdk.kit import KitAPI
+from blindoracle_sdk.inbox import InboxAPI
 from blindoracle_sdk.mcp import MCPAPI
 
 
@@ -139,6 +140,7 @@ class BlindOracleClient:
         self.wallet = WalletAPI(self)  # free token preflight (v0.8)
         self.proofs = ProofsAPI(self)  # public settlement proofs (v0.10)
         self.kit = KitAPI(self)  # agent kit docs, derived from the live manifest (v0.10)
+        self.inbox = InboxAPI(self)  # cheap unread check + watch (RQ-BO-INBOX-STATUS-01)
         self.mcp = MCPAPI(self)  # SKUs over /v1/mcp (v0.10)
         self.attestation = AttestationAPI(self)  # Verified Introduction VI-001 (v0.3)
         self.registration = None  # set by BlindOracleClient.register()
