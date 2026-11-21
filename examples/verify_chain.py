@@ -5,6 +5,7 @@
     python3 verify_chain.py dlg-bf8476c560597afe1f58
     python3 verify_chain.py chain.json --did-doc did.json --no-status     # fully offline
     python3 verify_chain.py vc.json        # one credential (grant, attestation, stop order)
+    python3 verify_chain.py verify-order <tx_hash> --order <X-BO-Order value | order.json>
 
 Standalone: one file, stdlib + `cryptography` (Ed25519). It never calls a BlindOracle
 verify endpoint. It reads:
@@ -305,7 +306,131 @@ def verify_one(vc: dict, did_doc: dict, status_doc=None) -> dict:
             "id": vc.get("id"), "proof_config_variant": variant, "status": status}
 
 
+# --- verify-order: is an on-chain payment bound to one published order? -------------
+# RQ-BO-X402-ORDER-NONCE-01. A BlindOracle buyer on SDK >= 0.12.1 signs the EIP-3009
+# nonce as keccak256(JCS(order)). USDC emits AuthorizationUsed(authorizer, nonce) when the
+# authorization is used, so the order is checkable from the tx receipt alone.
+BASE_RPC = "https://mainnet.base.org"
+USDC_BASE = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+_RC = [0x0000000000000001, 0x0000000000008082, 0x800000000000808A, 0x8000000080008000,
+       0x000000000000808B, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009,
+       0x000000000000008A, 0x0000000000000088, 0x0000000080008009, 0x000000008000000A,
+       0x000000008000808B, 0x800000000000008B, 0x8000000000008089, 0x8000000000008003,
+       0x8000000000008002, 0x8000000000000080, 0x000000000000800A, 0x800000008000000A,
+       0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008]
+_ROT = [[0, 36, 3, 41, 18], [1, 44, 10, 45, 2], [62, 6, 43, 15, 61], [28, 55, 25, 21, 56],
+        [27, 20, 39, 8, 14]]
+
+
+def keccak256(data: bytes) -> bytes:
+    """Pure-python Keccak-256 (Ethereum's hash, not NIST SHA3-256), so this file stays
+    stdlib-only for the order check."""
+    M = (1 << 64) - 1
+    rate = 136
+    msg = bytearray(data) + b"\x01"
+    msg += b"\x00" * ((-len(msg)) % rate)
+    msg[-1] |= 0x80
+    st = [[0] * 5 for _ in range(5)]
+    for off in range(0, len(msg), rate):
+        blk = msg[off:off + rate]
+        for i in range(rate // 8):
+            st[i % 5][i // 5] ^= int.from_bytes(blk[8 * i:8 * i + 8], "little")
+        for rnd in range(24):
+            c = [st[x][0] ^ st[x][1] ^ st[x][2] ^ st[x][3] ^ st[x][4] for x in range(5)]
+            d = [c[(x - 1) % 5] ^ (((c[(x + 1) % 5] << 1) | (c[(x + 1) % 5] >> 63)) & M)
+                 for x in range(5)]
+            st = [[st[x][y] ^ d[x] for y in range(5)] for x in range(5)]
+            b = [[0] * 5 for _ in range(5)]
+            for x in range(5):
+                for y in range(5):
+                    r = _ROT[x][y]
+                    b[y][(2 * x + 3 * y) % 5] = ((st[x][y] << r) | (st[x][y] >> (64 - r))) & M if r else st[x][y]
+            st = [[b[x][y] ^ ((~b[(x + 1) % 5][y]) & b[(x + 2) % 5][y]) for y in range(5)]
+                  for x in range(5)]
+            st[0][0] ^= _RC[rnd]
+    out = b"".join(st[i % 5][i // 5].to_bytes(8, "little") for i in range(rate // 8))
+    return out[:32]
+
+
+AUTH_USED_TOPIC = "0x" + keccak256(b"AuthorizationUsed(address,bytes32)").hex()
+TRANSFER_TOPIC = "0x" + keccak256(b"Transfer(address,address,uint256)").hex()
+
+
+def _order_jcs(order: dict) -> bytes:
+    return json.dumps(order, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def _load_order(src: str) -> dict:
+    """An X-BO-Order header value (b64url(JCS(order)).sig), a JSON file, or inline JSON."""
+    try:
+        with open(src, encoding="utf-8") as fh:
+            d = json.load(fh)
+        return d.get("boOrder", d)
+    except (OSError, ValueError):
+        pass
+    if src.lstrip().startswith("{"):
+        d = json.loads(src)
+        return d.get("boOrder", d)
+    body = src.split(".", 1)[0]
+    return json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
+
+
+def _rpc(url: str, method: str, params: list):
+    req = urllib.request.Request(url, data=json.dumps(
+        {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode(),
+        headers={"Content-Type": "application/json", "User-Agent": UA})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.loads(r.read().decode())["result"]
+
+
+def verify_order(receipt: dict, order: dict) -> dict:
+    want = "0x" + keccak256(_order_jcs(order)).hex()
+    used = [lg for lg in receipt.get("logs") or []
+            if (lg.get("address") or "").lower() == USDC_BASE
+            and (lg.get("topics") or [None])[0] == AUTH_USED_TOPIC]
+    xfers = [lg for lg in receipt.get("logs") or []
+             if (lg.get("address") or "").lower() == USDC_BASE
+             and (lg.get("topics") or [None])[0] == TRANSFER_TOPIC]
+    nonces = [lg["topics"][2].lower() for lg in used if len(lg.get("topics") or []) > 2]
+    pay_ok = any("0x" + lg["topics"][2][-40:].lower() == str(order.get("payTo", "")).lower()
+                 and int(lg.get("data") or "0x0", 16) == int(order.get("amount") or -1)
+                 for lg in xfers if len(lg.get("topics") or []) > 2)
+    match = want.lower() in nonces
+    return {"ok": bool(match and pay_ok and receipt.get("status") in ("0x1", 1)),
+            "order_id": order.get("order_id"), "expected_nonce": want, "onchain_nonces": nonces,
+            "nonce_matches_order": match, "transfer_matches_order": pay_ok,
+            "tx_status": receipt.get("status"),
+            "binds": "this payment pays for this order and no other",
+            "does_not_bind": "who submitted the authorization"}
+
+
+def main_verify_order(argv) -> int:
+    ap = argparse.ArgumentParser(prog="verify_chain.py verify-order",
+                                 description="Check an on-chain USDC payment is bound to one order.")
+    ap.add_argument("tx_hash")
+    ap.add_argument("--order", required=True,
+                    help="X-BO-Order header value, a JSON file, or inline JSON of the order")
+    ap.add_argument("--rpc", default=BASE_RPC)
+    ap.add_argument("--receipt", help="tx receipt JSON file instead of calling --rpc")
+    a = ap.parse_args(argv)
+    try:
+        order = _load_order(a.order)
+        receipt = (json.load(open(a.receipt, encoding="utf-8")) if a.receipt
+                   else _rpc(a.rpc, "eth_getTransactionReceipt", [a.tx_hash]))
+        if not receipt:
+            raise ValueError("no receipt (tx unknown or pending)")
+    except Exception as e:  # noqa: BLE001
+        print(f"could not load inputs: {e}", file=sys.stderr)
+        return 2
+    res = {"tx_hash": a.tx_hash, **verify_order(receipt, order)}
+    print(json.dumps(res, indent=2))
+    return 0 if res["ok"] else 1
+
+
 def main(argv=None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv and argv[0] == "verify-order":
+        return main_verify_order(argv[1:])
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("src", help="delegation id (dlg-...) or a JSON file: one credential, "
                     "a list of credentials, or {credentials: [...]}")
