@@ -39,6 +39,10 @@ directedBy for the same thing), and an AgentDelegationDirection link may carry t
 signature over this delegation id + task hash. `person_link` is "directed", "authorized" or
 "none". Checked here with the stdlib: the grant text hashes to grantSha256 and names the
 delegator, and the direction's signed text is the exact expected message for this record.
+A direction may instead be signed by the person's approval device (approverWallet): the
+person wallet named that wallet in a signed link carried on the credential (approverLink).
+Checked here: the link text is the expected statement, joins the grant's person wallet to the
+approval wallet, was valid when the job was directed, and the direction text names the link.
 NOT checked here: the wallet signatures themselves (EIP-191 recovery needs secp256k1; smart
 wallets need a Base RPC), so the result says `wallet_signatures_rechecked: false`.
 
@@ -270,6 +274,35 @@ def person_link(record: dict, directions: list) -> dict:
         expected = (f"BlindOracle job direction\n{rs.get('delegationId')}\n{rs.get('taskSha256')}\n{wallet}\n"
                     "I am the person behind the delegator and I direct this job.")
         dp = []
+        approver = s.get("approverWallet")
+        link = s.get("approverLink") if isinstance(s.get("approverLink"), dict) else None
+        if approver or link:
+            # The person wallet named an approval device in a signed link; that device signed this job.
+            link = link or {}
+            iso = lambda t: datetime.fromtimestamp(int(t or 0), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")  # noqa: E731
+            try:
+                link_text = ("BlindOracle approval device\n"
+                             f"Person wallet: {link.get('personWallet')}\n"
+                             f"Approval wallet: {link.get('approvalWallet')}\n"
+                             f"Valid: {iso(link.get('notBefore'))} to {iso(link.get('notAfter'))}\n"
+                             f"Nonce: {link.get('id')}\n\n"
+                             "I hold the person wallet above. I name the approval wallet as my device for approving "
+                             "single jobs of agents I have authorized. It cannot grant, spend or change limits. "
+                             "Signing moves no funds. I can revoke this at any time by signing a revocation.")
+                at = ts(directions[0].get("validFrom")).timestamp()
+                in_window = int(link.get("notBefore")) <= at < int(link.get("notAfter"))
+            except Exception:  # noqa: BLE001
+                link_text, in_window = None, False
+            if str(link.get("personWallet") or "").lower() != wallet.lower() or \
+                    str(link.get("approvalWallet") or "").lower() != str(approver or "").lower() or not approver:
+                dp.append("the approval link does not join this person wallet and approval wallet")
+            if link.get("signedMessage") != link_text:
+                dp.append("approval link text is not the expected statement")
+            if not in_window:
+                dp.append("the approval link was not valid when the job was directed")
+            expected = (f"BlindOracle job direction\n{rs.get('delegationId')}\n{rs.get('taskSha256')}\n{wallet}\n"
+                        f"Approval wallet: {approver}\nApproval link: {link.get('id')}\n"
+                        "I am the person behind the delegator and I direct this job from my approval device.")
         if str(s.get("personWallet") or "").lower() != wallet.lower():
             dp.append("signer is not the grant's person wallet")
         if s.get("signedMessage") != expected:
@@ -278,7 +311,10 @@ def person_link(record: dict, directions: list) -> dict:
             dp.append("the direction does not name this record")
         out["problems"].extend(f"{DIRECTION}: {p}" for p in dp)
         out["directed_by"] = {"person_wallet": s.get("personWallet"), "signed_at": directions[0].get("validFrom"),
-                              "signature_method": s.get("signatureMethod"), "text_checks": "fail" if dp else "pass"}
+                              "signature_method": s.get("signatureMethod"), "text_checks": "fail" if dp else "pass",
+                              **({"approver_wallet": s.get("approverWallet"),
+                                  "approver_link_id": (s.get("approverLink") or {}).get("id"),
+                                  "human_presence": s.get("humanPresence")} if s.get("approverWallet") else {})}
         if not dp and not gp:
             out["person_link"] = "directed"
     return out
