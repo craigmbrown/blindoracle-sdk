@@ -53,11 +53,20 @@ __all__ = [
     "parse_challenge",
     "build_payment_header",
     "PAYMENT_HEADER",
+    "ORDER_HEADER",
+    "order_nonce",
+    "order_header",
 ]
 
 #: The header the gateway documents for the paid retry. It also accepts
 #: ``X-PAYMENT`` and ``X-402-Payment``; we send the documented one.
 PAYMENT_HEADER = "PAYMENT-SIGNATURE"
+
+#: Order-binding echo header (BlindOracle, RQ-BO-X402-ORDER-NONCE-01). When a
+#: challenge entry carries ``extra.boOrder`` + ``extra.boOrderSig``, the nonce we
+#: sign is ``keccak256(JCS(boOrder))`` and the order is echoed here, so the
+#: signature pays for that order and no other. Opt out: BLINDORACLE_ORDER_BIND=0.
+ORDER_HEADER = "X-BO-Order"
 
 #: Header carrying the base64 challenge on the 402 response.
 CHALLENGE_HEADER = "payment-required"
@@ -329,6 +338,39 @@ def _load_account(private_key: Optional[str]):
         raise SigningUnavailable("the configured signing key could not be loaded") from None
 
 
+def _jcs(obj: Dict[str, Any]) -> bytes:
+    """RFC 8785 for the flat str/int order dict (sorted keys, no spaces, UTF-8)."""
+    return json.dumps(obj, sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False).encode("utf-8")
+
+
+def order_nonce(order: Dict[str, Any]) -> str:
+    """``0x`` + keccak256(JCS(order)) — the nonce that binds a payment to ``order``.
+    Anyone can recompute it and compare with USDC's ``AuthorizationUsed`` event."""
+    from eth_utils import keccak  # installed with the [x402] extra (eth-account)
+    return "0x" + keccak(_jcs(order)).hex()
+
+
+def bound_order(challenge: "PaymentChallenge") -> Optional[Tuple[Dict[str, Any], str]]:
+    """``(order, sig)`` when the challenge offers order binding, else None."""
+    if os.environ.get("BLINDORACLE_ORDER_BIND", "1") == "0":
+        return None
+    extra = challenge.entry.get("extra") or {}
+    order, sig = extra.get("boOrder"), extra.get("boOrderSig")
+    if isinstance(order, dict) and isinstance(sig, str) and sig:
+        return order, sig
+    return None
+
+
+def order_header(challenge: "PaymentChallenge") -> Optional[str]:
+    """Value for :data:`ORDER_HEADER`, or None when the challenge is unbound."""
+    bo = bound_order(challenge)
+    if not bo:
+        return None
+    order, sig = bo
+    return base64.urlsafe_b64encode(_jcs(order)).decode("ascii").rstrip("=") + "." + sig
+
+
 def build_payment_header(
     challenge: PaymentChallenge,
     *,
@@ -357,7 +399,8 @@ def build_payment_header(
     # block inclusion. A challenge's `maxTimeoutSeconds` of 60 expires under the
     # facilitator, and the failure surfaces as an opaque verify/settle error.
     valid_before = ts + max(challenge.max_timeout_seconds, _MIN_VALIDITY_SECONDS)
-    nonce = "0x" + secrets.token_hex(32)
+    _bo = bound_order(challenge)
+    nonce = order_nonce(_bo[0]) if _bo else "0x" + secrets.token_hex(32)
 
     message = {
         "from": account.address,

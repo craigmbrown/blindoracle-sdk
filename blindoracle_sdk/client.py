@@ -15,6 +15,7 @@ from typing import Optional
 
 from blindoracle_sdk._version import user_agent as _user_agent
 from blindoracle_sdk.x402 import PAYMENT_HEADER as _X402_HEADER
+from blindoracle_sdk.x402 import ORDER_HEADER as _X402_ORDER_HEADER
 
 
 def _env_float(name: str) -> Optional[float]:
@@ -223,6 +224,7 @@ class BlindOracleClient:
             session_spent_usd=self.session_spent_usd,
         )
         self.session_spent_usd += challenge.amount_usd
+        self._x402_order_hdr = _x402.order_header(challenge)
         # Record the authorization, never the key or the signature's provenance.
         self.payments.append({
             "amount_usd": challenge.amount_usd,
@@ -232,6 +234,9 @@ class BlindOracleClient:
             "resource": challenge.resource_url,
             "nonce": payload["payload"]["authorization"]["nonce"],
             "valid_before": payload["payload"]["authorization"]["validBefore"],
+            "order_bound": bool(self._x402_order_hdr),
+            "order_id": ((challenge.entry.get("extra") or {}).get("boOrder") or {}).get("order_id")
+            if self._x402_order_hdr else None,
         })
         return header_value
 
@@ -318,6 +323,8 @@ class BlindOracleClient:
                     paid_header = self._x402_pay(err_data, e.headers)
                     if paid_header:
                         headers[_X402_HEADER] = paid_header
+                        if getattr(self, "_x402_order_hdr", None):
+                            headers[_X402_ORDER_HEADER] = self._x402_order_hdr
                         continue
 
                 if status == 401:

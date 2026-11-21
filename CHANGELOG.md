@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.12.1 — 2026-11-21
+
+A payment pays for one order and no other.
+
+### Added
+- Order-bound x402 nonce (RQ-BO-X402-ORDER-NONCE-01). When a 402 challenge entry carries `extra.boOrder` + `extra.boOrderSig`, the SDK signs the EIP-3009 nonce as `keccak256(JCS(boOrder))` and sends the order back in `X-BO-Order`. The server refuses the payment before any facilitator call (`order_binding_failed`, not charged) if the order was altered, expired, belongs to another SKU/amount/payee, or the nonce is not its hash. Challenges without `boOrder` are paid exactly as before (random nonce). Opt out: `BLINDORACLE_ORDER_BIND=0`. `client.payments` rows gain `order_bound` / `order_id`.
+- `examples/verify_chain.py verify-order <tx> --order <X-BO-Order value | order.json>`: reads USDC's `AuthorizationUsed` and `Transfer` logs from the Base receipt and checks the nonce is the order's hash and the transfer matches its amount and payee. Stdlib only (pure-python Keccak-256). It does not prove who submitted the authorization.
+
 ## 0.12.0 — 2026-11-21
 
 Stay connected to your agent's notes.
