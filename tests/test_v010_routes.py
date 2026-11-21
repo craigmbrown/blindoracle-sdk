@@ -91,7 +91,7 @@ def test_proofs(bo):
     assert len(c.proofs.verify_recipe()) == 3
 
 
-def test_version_is_0_11():
+def test_version_is_0_12():
     """pyproject and the source-tree fallback agree on 0.10 (the installed
     metadata may lag on a dev box; test_version_consistency covers that link)."""
     import re
@@ -99,7 +99,7 @@ def test_version_is_0_11():
     from blindoracle_sdk import _version
     root = Path(__file__).resolve().parent.parent
     py = re.search(r'^version = "([^"]+)"', (root / "pyproject.toml").read_text(), re.M).group(1)
-    assert py == _version._FALLBACK and py.startswith("0.11")
+    assert py == _version._FALLBACK and py.startswith("0.12")
 
 
 def test_topup_posts_tx_hash_to_agent(bo):
